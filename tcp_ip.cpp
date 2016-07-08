@@ -227,10 +227,3 @@ SOCKET TCP_IP::get_socket()
     return socketfd;
 }
 
-void TCP_IP::ThreadStart(TCP_IP &obj, void *p, char *output)
-{
-    if (obj.isOpen())
-    {
-        obj.read(output);
-    }
-}

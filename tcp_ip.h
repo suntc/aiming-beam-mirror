@@ -17,7 +17,7 @@ public:
     TCP_IP(const char *ip, const char *port);
     void write(const char *sendbuf);
     void checkConnection();
-    static void ThreadStart(TCP_IP &obj, void *p, char *output);
+    static void ThreadStart(TCP_IP &obj, char *output);
     void read(char *output);
     bool disconnect();
     bool isOpen();
