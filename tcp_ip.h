@@ -1,8 +1,12 @@
 #ifndef TCP_IP_H
 #define TCP_IP_H
 #include <winsock2.h>
+#include <cstdlib>
+#include <string>
 
 #define DEFAULT_BUFLEN 512
+
+using namespace std;
 
 class TCP_IP
 {
@@ -17,8 +21,7 @@ public:
     TCP_IP(const char *ip, const char *port);
     void write(const char *sendbuf);
     void checkConnection();
-    static void ThreadStart(TCP_IP &obj, char *output);
-    void read(char *output);
+    void read(string *output);
     bool disconnect();
     bool isOpen();
     void set_transaction(bool assert);

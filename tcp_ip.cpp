@@ -11,6 +11,8 @@ version of the aiming beam software.
 #include <boost/thread/thread.hpp>
 #include <boost/date_time.hpp>
 
+using namespace std;
+
 TCP_IP::TCP_IP(const char *ip, const char *port)
 {
     // Connecting to the server
@@ -20,7 +22,8 @@ TCP_IP::TCP_IP(const char *ip, const char *port)
     socketfd = INVALID_SOCKET;
     isConnected = false;
     inTransaction = false;
-    int status;
+    int status = -1;
+    int WSStatus;
 
     // The struct that getaddrinfo() fills up with data.
     struct addrinfo host_info;
@@ -29,8 +32,8 @@ TCP_IP::TCP_IP(const char *ip, const char *port)
     struct addrinfo *host_info_list;
 
     // Initialize Winsock
-    status = WSAStartup(MAKEWORD(2,2), &wsaData);
-    if (status != 0)
+    WSStatus = WSAStartup(MAKEWORD(2,2), &wsaData);
+    if (WSStatus != 0)
     {
         qDebug() << "WSAStartup failed!";
     }
@@ -47,9 +50,9 @@ TCP_IP::TCP_IP(const char *ip, const char *port)
         host_info.ai_protocol = IPPROTO_TCP;
 
         // Now fill up the linked list of host_info structs with server's address information.
-        status = getaddrinfo(ip, port, &host_info, &host_info_list);
+        WSStatus = getaddrinfo(ip, port, &host_info, &host_info_list);
 
-        if (status != 0)
+        if (WSStatus != 0)
         {
             qDebug() << "Error getting address info!";
         }
@@ -66,7 +69,6 @@ TCP_IP::TCP_IP(const char *ip, const char *port)
                 else
                 {
                     // connect to server
-
                     status = connect(socketfd, host_info_list->ai_addr, host_info_list->ai_addrlen);
                     if (status == SOCKET_ERROR)
                     {
@@ -129,7 +131,7 @@ void TCP_IP::write(const char *sendbuf)
 /*
  * Read from host
  */
-void TCP_IP::read(char *output)
+void TCP_IP::read(string *output)
 {
     int status;
 
@@ -142,10 +144,17 @@ void TCP_IP::read(char *output)
     // receive from host
     status = recv(socketfd, recvbuf, len, 0);
 
-    // copy received cmd so that it is available outside the thread
-    strcpy(output, recvbuf);
+    // clipping buffer, removes weird characters
+    if (status > 0 && status < DEFAULT_BUFLEN-1)
+    {
+        recvbuf[status] = '\0';
+    }
 
-    inTransaction = true;
+    // copy received cmd so that it is available outside the thread
+    //strcpy(output, recvbuf);
+
+    //qDebug() << recvbuf;
+    *output = recvbuf;
 }
 
 void TCP_IP::set_transaction (bool assert)
@@ -171,7 +180,7 @@ void TCP_IP::checkConnection()
     // check socket status, to verify connection
     char error_code;
     int error_code_size = sizeof(error_code);
-    status = getsockopt(socketfd, SOL_SOCKET, SO_ERROR, &error_code, &error_code_size);
+    status = getsockopt(socketfd, SOL_SOCKET, SO_KEEPALIVE, &error_code, &error_code_size);
 
     // disconnected
     if (error_code == SOCKET_ERROR)
@@ -191,6 +200,7 @@ void TCP_IP::checkConnection()
 bool TCP_IP::disconnect()
 {
     int status;
+
     // shutdown the connection
     status = shutdown(socketfd, SD_SEND);
     if (status == SOCKET_ERROR)
@@ -207,6 +217,7 @@ bool TCP_IP::disconnect()
     WSACleanup();
     isConnected = false;
 
+    qDebug() << "Disconnected";
     return true;
 
 }

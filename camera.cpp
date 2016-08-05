@@ -7,6 +7,12 @@ using namespace cv;
 
 camera::camera()
 {
+
+
+}
+
+void camera::init()
+{
     // connect to the camera and assign camera handle
     if(is_InitCamera(&hCam, NULL) == IS_SUCCESS)
     {
@@ -16,7 +22,6 @@ camera::camera()
     {
         isConnected = false;
     }
-
 }
 
 void camera::setup()
@@ -24,12 +29,6 @@ void camera::setup()
 
     qDebug() << "Setting up";
 
-    char* imgMem = 0;
-    int memId = 0;
-
-    // Load and Specify Image properties from uEye SDK
-    //is_LoadParameters(hCam, "/cam/set1");
-    IS_RECT camAOI;
     is_AOI(hCam, IS_AOI_IMAGE_GET_AOI, (void*)&camAOI, sizeof(camAOI));
 
     // Get/Set image size and location from uEye SDK
@@ -45,61 +44,74 @@ void camera::setup()
     }
     else
     {
-        int c = -1;
+        qDebug() << "Captured";
+    }
+}
 
-        while(c == -1)
+void camera::acquire()
+{
+    int c = -1;
+    int i = 0;
+    while (c == -1)
+    {
+        //int frameseq = is_CameraStatus(hCam, IS_SEQUENCE_CNT, IS_GET_STATUS);
+        i++;
+        qDebug() << i;
+        // stops live mode or cancels a hardware triggered
+        // image capture in case the exposure has not yet started
+        is_StopLiveVideo(hCam, IS_WAIT);
+
+        // releases memory from previous frame
+        is_FreeImageMem(hCam, imgMem, memId);
+
+        // allocate memory
+        is_AllocImageMem(hCam, camAOI.s32Width, camAOI.s32Height, 24, &imgMem, &memId);
+
+        // active memory
+        is_SetImageMem(hCam, imgMem, memId);
+
+        // transfer image to memory
+        is_CaptureVideo(hCam, IS_WAIT);
+
+        Mat frame;
+        Mat retmat(camAOI.s32Height, camAOI.s32Width, CV_8UC3, imgMem);
+
+        cvtColor(retmat, frame, CV_BGR2RGB);
+        //retmat.copyTo(frame);
+
+        // decrease image size if it initializes at high res
+        if (frame.rows != 512)
         {
-            // stops live mode or cancels a hardware triggered
-            // image capture in case the exposure has not yet started
-            is_StopLiveVideo(hCam, IS_WAIT);
-
-            // releases memory from previous frame
-            is_FreeImageMem(hCam, imgMem, memId);
-
-            // allocate memory
-            is_AllocImageMem(hCam, camAOI.s32Width, camAOI.s32Height, 24, &imgMem, &memId);
-
-            // active memory
-            is_SetImageMem(hCam, imgMem, memId);
-
-            // transfer image to memory
-            is_CaptureVideo(hCam, IS_WAIT);
-
-            // check frame number
-            //frameseq = is_CameraStatus(hCam, IS_SEQUENCE_CNT, IS_GET_STATUS);
-            //framecounter = frameseq;
-
-            Mat frame, frame0;
-            Mat retmat(camAOI.s32Height, camAOI.s32Width, CV_8UC3, imgMem);
-
-            cvtColor(retmat, frame, CV_BGR2RGB);
-
-            frame.copyTo(frame0);
-            if (frame0.rows != 512)
-            {
-                resize(frame0, frame0, Size (640, 512));
-            }
-            //cvtColor(frame, frame, CV_RGB2GRAY);
-            imshow("Camera Focus Preview", frame0);
-
-            double dblFPS;
-            is_SetFrameRate(hCam, IS_GET_FRAMERATE, &dblFPS);
-            qDebug() << dblFPS;
-
-            c = waitKey(1);
-
-            frame.release();
-            frame0.release();
-            retmat.release();
+            resize(frame, frame, Size (640, 512));
         }
 
+        imshow("Camera Preview", frame);
+
+        frame.release();
+        retmat.release();
+
+        int c0 = waitKey(0);
+        if (c == -1)
+        {
+            c = c0;
+        }
     }
+
+    closeConnection();
+}
+
+void camera::closeConnection()
+{
 
     // Closing and cleaning of the camera
     is_FreeImageMem(hCam, imgMem, memId);
 
+    // close connection
+    is_ExitCamera(hCam);
+
     // close windows
     destroyAllWindows();
+
 }
 
 bool camera::is_connected()
