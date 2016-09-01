@@ -5,16 +5,21 @@
 #include "videopointgrey.h"
 #include "opencv2/core.hpp"
 
-using namespace cv;
-
 class imageAcquisition
 {
 public:
-    Mat frame;
-    bool ctrl;
-    bool thread;
+    cv::Mat frame;
+    bool ctrl = false;
+    bool thread = false;
+    bool inAcquisition = false;
+    bool ready = false;
+    int channel = 1;
+    double threshold = 0.96;
     imageAcquisition();
     void startAcquisition();
+    VideoInput *cam;
+    void startupCamera(int ch, float thres);
+    void shutdownCamera();
 };
 
 #endif // IMAGEACQUISITION_H

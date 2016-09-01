@@ -3,8 +3,11 @@
 #include <winsock2.h>
 #include <cstdlib>
 #include <string>
+#include <stdio.h>
+#include <boost/thread/thread.hpp>
+#include <boost/date_time.hpp>
 
-#define DEFAULT_BUFLEN 512
+#define DEFAULT_BUFLEN 4096
 
 using namespace std;
 
@@ -21,7 +24,7 @@ public:
     TCP_IP(const char *ip, const char *port);
     void write(const char *sendbuf);
     void checkConnection();
-    void read(string *output);
+    void read(string *output, int *len, vector<double> *data);
     bool disconnect();
     bool isOpen();
     void set_transaction(bool assert);

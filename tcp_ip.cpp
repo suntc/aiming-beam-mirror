@@ -11,6 +11,7 @@ version of the aiming beam software.
 #include <boost/thread/thread.hpp>
 #include <boost/date_time.hpp>
 
+
 using namespace std;
 
 TCP_IP::TCP_IP(const char *ip, const char *port)
@@ -131,18 +132,19 @@ void TCP_IP::write(const char *sendbuf)
 /*
  * Read from host
  */
-void TCP_IP::read(string *output)
+void TCP_IP::read(string *output, int *len, vector<double> *data)
 {
     int status;
+    vector<double> tempdata; // temporary vector to hold the data
 
     // buffer to hold command sent by master
-    char recvbuf[512];
+    char recvbuf[4096];
 
     // init variable for recvbuf length
-    int len = 512;
+    int l = 4096;
 
     // receive from host
-    status = recv(socketfd, recvbuf, len, 0);
+    status = recv(socketfd, recvbuf, l, 0);
 
     // clipping buffer, removes weird characters
     if (status > 0 && status < DEFAULT_BUFLEN-1)
@@ -150,11 +152,65 @@ void TCP_IP::read(string *output)
         recvbuf[status] = '\0';
     }
 
-    // copy received cmd so that it is available outside the thread
-    //strcpy(output, recvbuf);
+    // & identify IRFs (iIRF)
+    // % identify fluorescence data (fIRF)
+
+    if (strncmp(recvbuf, "&", 1) == 0)  // & signals irf incoming
+    {
+        int vecSize;    // keep track of size of data, which is encoded as the first data point, following the command key
+        int keyLength = 6; // length of command key, e.g. &irf1: - this needs to be consistent to all commands sent via TCP that include data
+        int step = 4;   // step to read datapoints
+        int start = keyLength + step;   // initial position to read from the string
+        int end = keyLength + 2*step; // final position to read from the string
+
+        // get data length
+        copy(recvbuf + keyLength, recvbuf + (keyLength + step), reinterpret_cast<char*>(&vecSize));
+
+        // build array of data points
+        for (int i = 0; i < vecSize; i++)
+        {
+            int temp;
+            int j = i * step;
+            copy((recvbuf + start + j), (recvbuf + end + j), reinterpret_cast<char*>(&temp));
+            double temp2;
+            temp2 = (double)temp / 4096.0;
+            //qDebug() << temp2;
+            // save data in a temporary variable
+            tempdata.push_back(temp2);
+        }
+
+    }
+    else if (strncmp(recvbuf, "%", 1) == 0) // incoming data
+    {
+        int vecSize;    // keep track of size of data, which is encoded as the first data point, following the command key
+        int keyLength = 6; // length of command key, e.g. &irf1: - this needs to be consistent to all commands sent via TCP that include data
+        int step = 2;   // step to read datapoints
+        int start = keyLength + 4;   // initial position to read from the string
+        int end = start + 2; // final position to read from the string
+
+        // get data length
+        copy(recvbuf + keyLength, recvbuf + start, reinterpret_cast<char*>(&vecSize));
+
+
+        // build array of data points
+        for (int i = 0; i < vecSize; i++)
+        {
+            short temp;
+            int j = i * step;
+            copy((recvbuf + start + j), (recvbuf + end + j), reinterpret_cast<char*>(&temp));
+            double temp2;
+            temp2 = (double)temp / 1024.0;
+
+            //qDebug() << temp2;
+            // save data in a temporary variable
+            tempdata.push_back(temp2);
+        }
+    }
 
     //qDebug() << recvbuf;
     *output = recvbuf;
+    *len = status;
+    *data = tempdata;
 }
 
 void TCP_IP::set_transaction (bool assert)

@@ -2,6 +2,7 @@
 #include "FlyCapture2.h"
 #include <iostream>
 #include <QDebug>
+#include "errorhandler.h"
 
 using namespace FlyCapture2;
 using namespace std;
@@ -19,43 +20,51 @@ VideoPointGrey::VideoPointGrey()
     error = busMgr.GetNumOfCameras(&numCameras);
     if (error != PGRERROR_OK)
     {
-        PrintError(error);
-        exit(-1); //Replace the exit commands
+        //PrintError(error);
+        return;
+        //exit(-1); //Replace the exit commands
     }
 
     if ( numCameras < 1 )
     {
-        cout << "No camera detected." << endl;
-        exit(-1);
+        //cout << "No camera detected." << endl;
+        return;
     }
 
     error = busMgr.GetCameraFromIndex(0, &guid);
     if (error != PGRERROR_OK)
     {
         PrintError(error);
-        exit(-1);
+        return;
     }
 
     error = cam.Connect(&guid);
     if (error != PGRERROR_OK)
     {
         PrintError(error);
-        exit(-1);
+        return;
     }
 
     error = cam.GetCameraInfo(&camInfo);
     if (error != PGRERROR_OK)
     {
         PrintError(error);
-        exit(-1);
+        return;
     }
     error = cam.StartCapture();
     if ( error == PGRERROR_ISOCH_BANDWIDTH_EXCEEDED )
     {
         std::cout << "Bandwidth exceeded" << std::endl;
-        exit(-1);
+        return;
     }
 
+    connected = true;
+
+}
+
+bool VideoPointGrey::isConnected()
+{
+    return connected;
 }
 
 cv::Mat VideoPointGrey::getNextFrame( )
@@ -93,5 +102,6 @@ int VideoPointGrey::getNumberOfFrames()
 void VideoPointGrey::disconnect()
 {
     cam.Disconnect();
+    connected = false;
 }
 

@@ -18,7 +18,11 @@ SOURCES += main.cpp\
     guiupdater.cpp \
     camera.cpp \
     videopointgrey.cpp \
-    imageacquisition.cpp
+    imageacquisition.cpp \
+    threadwrapper.cpp \
+    overlay.cpp \
+    segmentation.cpp \
+    errorhandler.cpp
 
 
 INCLUDEPATH += "C:\Opt\Boost\include\boost-1_55"
@@ -59,6 +63,10 @@ HEADERS  += mainwindow.h \
     camera.h \
     videoinput.h \
     videopointgrey.h \
-    imageacquisition.h
+    imageacquisition.h \
+    threadwrapper.h \
+    overlay.h \
+    segmentation.h \
+    errorhandler.h
 
 FORMS    += mainwindow.ui

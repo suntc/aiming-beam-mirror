@@ -5,6 +5,7 @@
 #include "videoinput.h"
 #include "FlyCapture2.h"
 
+
 using namespace FlyCapture2;
 
 class VideoPointGrey : public VideoInput
@@ -15,6 +16,7 @@ public:
     bool lastFrame();
     int getNumberOfFrames();
     void disconnect();
+    bool isConnected();
 private:
     CameraInfo camInfo;
     Camera cam;
@@ -24,6 +26,7 @@ private:
     FlyCapture2::Error error;
     Image rawImage;
     Image rgbImage;
+    bool connected = false;
 };
 
 #endif // VIDEOPOINTGREY_H

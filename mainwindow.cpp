@@ -2,14 +2,20 @@
 #include "ui_mainwindow.h"
 #include <QDebug>
 
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
 
-    QObject::connect(updater, SIGNAL(requestNewMode(int)), this, SLOT(setMode(int)));
+    // Needed to use string as outputError argument. check QMetaType docs
+    qRegisterMetaType<std::string>();
 
+    QObject::connect(updater, SIGNAL(requestNewMode(int)), this, SLOT(setMode(int)));
+    QObject::connect(updater, SIGNAL(requestReady(bool)), this, SLOT(ready(bool)));
+    QObject::connect(updater, SIGNAL(requestError(bool)), this, SLOT(error(bool)));
+    QObject::connect(updater, SIGNAL(outputError(std::string)), this, SLOT(log(std::string)));
 }
 
 void MainWindow::init()
@@ -136,6 +142,39 @@ void MainWindow::acquisition_invivo(bool status)
         ui->acquisition_invivo_btn->setStyleSheet("background-color: red");
         ui->acquisition_invivo_label->setStyleSheet("font-weight:normal");
     }
+}
+
+void MainWindow::ready(bool status)
+{
+    if (status)
+    {
+        ui->ready_btn->setStyleSheet("background-color:green;");
+        ui->ready_label->setStyleSheet("font-weight:bold");
+    }
+    else
+    {
+        ui->ready_btn->setStyleSheet("background-color:rgb(197,197,197);");
+        ui->ready_btn->setStyleSheet("font-weight:normal");
+    }
+}
+
+void MainWindow::error(bool status)
+{
+    if (status)
+    {
+        ui->error_btn->setStyleSheet("background-color:red;");
+        ui->error_label->setStyleSheet("font-weight:bold");
+    }
+    else
+    {
+        ui->error_btn->setStyleSheet("background-color:rgb(197,197,197);");
+        ui->error_btn->setStyleSheet("font-weight:normal");
+    }
+}
+
+void MainWindow::log(std::string msg)
+{
+    ui->log_text->appendPlainText(QString::fromStdString(msg));
 }
 
 MainWindow::~MainWindow()
