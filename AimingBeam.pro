@@ -22,7 +22,9 @@ SOURCES += main.cpp\
     threadwrapper.cpp \
     overlay.cpp \
     segmentation.cpp \
-    errorhandler.cpp
+    errorhandler.cpp \
+    laguerredeconvolution.cpp \
+    deconvolveprocess.cpp
 
 
 INCLUDEPATH += "C:\Opt\Boost\include\boost-1_55"
@@ -67,6 +69,8 @@ HEADERS  += mainwindow.h \
     threadwrapper.h \
     overlay.h \
     segmentation.h \
-    errorhandler.h
+    errorhandler.h \
+    laguerredeconvolution.h \
+    deconvolveprocess.h
 
 FORMS    += mainwindow.ui

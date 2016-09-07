@@ -97,7 +97,7 @@ void startup(GUIupdater *ui)
     // initialize image acquisition object
     imageAcquisition *acq = new imageAcquisition();
 
-
+    LaguerreDeconvolution *decon = new LaguerreDeconvolution()
 
     while (!acq->ready)
     {
