@@ -3,6 +3,7 @@
 #include <QMessageBox>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <QDebug>
 
 using namespace cv;
 
@@ -17,11 +18,11 @@ LaguerreDeconvolution::LaguerreDeconvolution(vector<double> iIRF_CH1, vector<dou
     // --------------------------------------------------------------------------------------
     // Params
     double alpha = 0.0; // Alpha value initialization
-    //int LaguerreOrder = 0; // Laguerre Order initialization
+    //int LaguerreOrder = 12; // Laguerre Order initialization
     int DataLength = (int) iIRF_CH1.size(); // Length of data
 
     // CH1
-    deconMats deconMatrices_CH1; // All matrices required for the deconvolution
+    //deconMats deconMatrices_CH1; // All matrices required for the deconvolution
 
     alpha = deconProc.Laguerre_alphaval(DataLength, LaguerreOrder); // Alpha value and laguerre order from lookup table
 
@@ -32,19 +33,17 @@ LaguerreDeconvolution::LaguerreDeconvolution(vector<double> iIRF_CH1, vector<dou
         messageBox.setFixedSize(500, 200);
         exit(-1);
     }
-
     deconProc.preMatChannels(iIRF_CH1, deconMatrices_CH1, DataLength, LaguerreOrder, alpha);
-
     // CH2
-    deconMats deconMatrices_CH2; // All matrices required for the deconvolution
+    //deconMats deconMatrices_CH2; // All matrices required for the deconvolution
     deconProc.preMatChannels(iIRF_CH2, deconMatrices_CH2, DataLength, LaguerreOrder, alpha);
 
     // CH3
-    deconMats deconMatrices_CH3; // All matrices required for the deconvolution
+    //deconMats deconMatrices_CH3; // All matrices required for the deconvolution
     deconProc.preMatChannels(iIRF_CH3, deconMatrices_CH3, DataLength, LaguerreOrder, alpha);
 
     // CH4
-    deconMats deconMatrices_CH4; // All matrices required for the deconvolution
+    //deconMats deconMatrices_CH4; // All matrices required for the deconvolution
     deconProc.preMatChannels(iIRF_CH4, deconMatrices_CH4, DataLength, LaguerreOrder, alpha);
 
     Ccols = deconMatrices_CH1.D.rows;
@@ -60,74 +59,39 @@ LaguerreDeconvolution::LaguerreDeconvolution(vector<double> iIRF_CH1, vector<dou
 // --------------------------------------------------------------------------
 // --------------------------------------------------------------------------
 // Conditions for CH1
-void LaguerreDeconvolution::getLifetimes(vector<double> fIRF_CH1, vector<double> fIRF_CH2, vector<double> fIRF_CH3, vector<double> fIRF_CH4, double idx)
+
+double LaguerreDeconvolution::getLifetime(vector<double> fIRF, int channel)
 {
-    vector<double> channels_L1(5); // LT values @ 1 iteration ago
-    vector<double> channels_L2(5); // LT values @ 2 iterations ago
-    vector<double> channels_L3(5); // LT values @ current iteration
 
-    if (isnan(fIRF_CH1.at(0)))
+    double lifetime;
+    if (isnan(fIRF.at(0)))
     {
-        channels_L1.at(0) = fIRF_CH1.at(0);
+        lifetime = fIRF.at(0);
     }
-    else if (isinf(fIRF_CH1.at(0)))
+    else if (isinf(fIRF.at(0)))
     {
-        channels_L1.at(0) = fIRF_CH1.at(0);
+        lifetime = fIRF.at(0);
     }
     else
     {
-        Mat fIRF1(fIRF_CH1);
-        double lifet1 = deconProc.lifetCalc(deconMatrices_CH1, fIRF1, LaguerreOrder, Ccols, resTime);
-        channels_L1.at(0) = lifet1;
-    }
+        Mat fIRF1(fIRF);
 
-    // Conditions for CH2
-    if (isnan(fIRF_CH2.at(0)))
-    {
-        channels_L1.at(1) = fIRF_CH2.at(0);
+        switch(channel)
+        {
+        case 1:
+            lifetime = deconProc.lifetCalc(deconMatrices_CH1, fIRF1, LaguerreOrder, Ccols, resTime);
+            break;
+        case 2:
+            lifetime = deconProc.lifetCalc(deconMatrices_CH2, fIRF1, LaguerreOrder, Ccols, resTime);
+            break;
+        case 3:
+            lifetime = deconProc.lifetCalc(deconMatrices_CH3, fIRF1, LaguerreOrder, Ccols, resTime);
+            break;
+        case 4:
+            lifetime = deconProc.lifetCalc(deconMatrices_CH4, fIRF1, LaguerreOrder, Ccols, resTime);
+            break;
+        }
     }
-    else if (isinf(fIRF_CH2.at(0)))
-    {
-        channels_L1.at(1) = fIRF_CH2.at(0);
-    }
-    else
-    {
-        Mat fIRF2(fIRF_CH2);
-        double lifet2 = deconProc.lifetCalc(deconMatrices_CH2, fIRF2, LaguerreOrder, Ccols, resTime);
-        channels_L1.at(1) = lifet2;
-    }
-
-    // Conditions for CH3
-    if (isnan(fIRF_CH3.at(0)))
-    {
-        channels_L1.at(2) = fIRF_CH3.at(0);
-    }
-    else if (isinf(fIRF_CH3.at(0)))
-    {
-        channels_L1.at(2) = fIRF_CH3.at(0);
-    }
-    else
-    {
-        Mat fIRF3(fIRF_CH3);
-        double lifet3 = deconProc.lifetCalc(deconMatrices_CH3, fIRF3, LaguerreOrder, Ccols, resTime);
-        channels_L1.at(2) = lifet3;
-    }
-
-    // Conditions for CH4
-    if (isnan(fIRF_CH4.at(0)))
-    {
-        channels_L1.at(3) = fIRF_CH4.at(0);
-    }
-    else if (isinf(fIRF_CH4.at(0)))
-    {
-        channels_L1.at(3) = fIRF_CH4.at(0);
-    }
-    else
-    {
-        Mat fIRF4(fIRF_CH4);
-        double lifet4 = deconProc.lifetCalc(deconMatrices_CH4, fIRF4, LaguerreOrder, Ccols, resTime);
-        channels_L1.at(3) = lifet4;
-    }
-
-    channels_L1.at(4) = idx;
+    return lifetime;
 }
+

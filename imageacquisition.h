@@ -20,6 +20,12 @@ public:
     VideoInput *cam;
     void startupCamera(int ch, float thres);
     void shutdownCamera();
+    void set_lifetime(double val, int channel);
+private:
+    double ch1_tau;
+    double ch2_tau;
+    double ch3_tau;
+    double ch4_tau;
 };
 
 #endif // IMAGEACQUISITION_H

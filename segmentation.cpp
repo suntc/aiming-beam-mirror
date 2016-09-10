@@ -71,7 +71,7 @@ Segmentation::Segmentation(Mat frame, cv::Point point1, cv::Point point2, bool i
 
     // Segmentation Settings
     last_found = 5;
-    thres = (float) 0.95;//0.958; // manually defined
+    //thres = (float) 0.95;//0.958; // manually defined
 
     area_dim = 40;
     area_dim_l = 150;
@@ -178,7 +178,9 @@ void Segmentation::startSegmentation(Mat frame, double lt_ch1, double lt_ch2, do
 
     int x, y, radius;
     float correlation;
-    if (last_found > 4)
+
+    //if (last_found > 4)
+    if (false)
     {
        // int xfrom = res_x/2-area_dim_l;
        // int yfrom = res_y/2-area_dim_l;

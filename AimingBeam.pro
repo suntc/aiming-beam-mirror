@@ -48,12 +48,12 @@ LIBS += -L"C:\Program Files\IDS\uEye\Develop\Lib" -luEye_tools_64
 LIBS += -LC:\Opt\FlyCapture2\lib64 -lFlyCapture2
 
 # boost
-LIBS += -LC:\Opt\Boost\lib -llibboost_system-vc120-mt-gd-1_55
-LIBS += -LC:\Opt\Boost\lib -llibboost_filesystem-vc120-mt-gd-1_55
-LIBS += -LC:\Opt\Boost\lib -llibboost_thread-vc120-mt-gd-1_55
-#LIBS += -LC:\Opt\Boost\lib -llibboost_system-vc120-mt-1_55
-#LIBS += -LC:\Opt\Boost\lib -llibboost_filesystem-vc120-mt-1_55
-#LIBS += -LC:\Opt\Boost\lib -llibboost_thread-vc120-mt-1_55
+#LIBS += -LC:\Opt\Boost\lib -llibboost_system-vc120-mt-gd-1_55
+#LIBS += -LC:\Opt\Boost\lib -llibboost_filesystem-vc120-mt-gd-1_55
+#LIBS += -LC:\Opt\Boost\lib -llibboost_thread-vc120-mt-gd-1_55
+LIBS += -LC:\Opt\Boost\lib -llibboost_system-vc120-mt-1_55
+LIBS += -LC:\Opt\Boost\lib -llibboost_filesystem-vc120-mt-1_55
+LIBS += -LC:\Opt\Boost\lib -llibboost_thread-vc120-mt-1_55
 
 LIBS += -lWs2_32
 LIBS += -lMswsock

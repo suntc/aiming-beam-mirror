@@ -7,6 +7,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv/cv.h>
 #include <boost/iterator/counting_iterator.hpp>
+#include <QDebug>
 
 using namespace std;
 using namespace cv;
@@ -19,6 +20,8 @@ DeconvolveProcess::DeconvolveProcess()
 double DeconvolveProcess::Laguerre_alphaval(int LaguerreLength, int &LG_order)
 {
     // Reads the lookup table of alpha values and finds the one corresponding to the current data length and Laguerre order
+
+
 
     double alpha = 0.0;
 
@@ -193,20 +196,18 @@ Mat DeconvolveProcess::CholFact(Mat &H)
 void DeconvolveProcess::preMatChannels(vector<double> laser, deconMats &deconMatrices_CH1, int DataLength, int LaguerreOrder, double alpha)
 {
     DeconvolveProcess * allfuncs = new DeconvolveProcess;
-
     // Laguerre
     deconMatrices_CH1.L = allfuncs->Laguerre(LaguerreOrder, DataLength, alpha);
     Mat L;
     deconMatrices_CH1.L.copyTo(L);
-
     // Filtered Laguerre
     deconMatrices_CH1.V = allfuncs->LaguerreFilt(laser, L);
-
     // Third order derivative non-negative constraints
     deconMatrices_CH1.D = allfuncs->deriv3rd(DataLength, L);
 
     // H matrix
     mulTransposed(deconMatrices_CH1.V, deconMatrices_CH1.H, true);
+
     Mat H1 = deconMatrices_CH1.H.inv();
 
     // Cholesky Factorization

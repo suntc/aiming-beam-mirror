@@ -8,7 +8,7 @@ class LaguerreDeconvolution
 {
 public:
     LaguerreDeconvolution(vector<double> iIRF_CH1, vector<double> iIRF_CH2, vector<double> iIRF_CH3, vector<double> iIRF_CH4, double resTime);
-    void getLifetimes(vector<double> fIRF_CH1, vector<double> fIRF_CH2, vector<double> fIRF_CH3, vector<double> fIRF_CH4, double idx);
+    double getLifetime(vector<double> fIRF, int channel);
     //DeconvolveProcess precomputeMatrices(vector<double> iIRF_CH1, vector<double> iIRF_CH2, vector<double> iIRF_CH3, vector<double> iIRF_CH4);
 private:
     deconMats deconMatrices_CH1;

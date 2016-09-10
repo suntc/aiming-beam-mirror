@@ -98,7 +98,6 @@ void startup(GUIupdater *ui)
     imageAcquisition *acq = new imageAcquisition();
 
 
-
     while (!acq->ready)
     {
         ui->throwError("Camera not detected");
@@ -153,6 +152,10 @@ void startup(GUIupdater *ui)
         vector<double> data_CH4;
         vector<double> tempdata;
 
+        bool iIRFs_initialized=false;
+
+        LaguerreDeconvolution *decon = NULL;
+
         int idx = 0;
         double ch1_tau = 0.0;
         double ch2_tau = 0.0;
@@ -164,6 +167,14 @@ void startup(GUIupdater *ui)
         // start acquisition thread, to run indefinitely
         boost::thread AcquisitionThread(ThreadWrapper::StartAcquire, acq);
         while (true){
+
+            // initialize deconvolution only once
+            if (iIRFs_initialized==false && iIRF_CH1.size()>0 && iIRF_CH2.size()>0 && iIRF_CH3.size()>0 && iIRF_CH4.size()>0)
+            {
+                decon = new LaguerreDeconvolution(iIRF_CH1,iIRF_CH2,iIRF_CH3,iIRF_CH4,time_resolution);
+                iIRFs_initialized = true;
+
+            }
 
             // have the read command within a thread, so the communication is always opened
             boost::thread readingThread(ThreadWrapper::StartRead, conn, &output, &len, &tempdata);
@@ -383,7 +394,7 @@ void startup(GUIupdater *ui)
             else if (key.compare("&irf1") == 0)
             {
                 iIRF_CH1 = tempdata;
-                qDebug() << iIRF_CH1.size();
+                //qDebug() << iIRF_CH1.size();
                 conn.write(set_ack(key, "1"));
 
             }
@@ -392,7 +403,7 @@ void startup(GUIupdater *ui)
             else if (key.compare("&irf2") == 0)
             {
                 iIRF_CH2 = tempdata;
-                qDebug() << iIRF_CH2.size();
+                //qDebug() << iIRF_CH2.size();
                 conn.write(set_ack(key, "1"));
 
             }
@@ -401,7 +412,7 @@ void startup(GUIupdater *ui)
             else if (key.compare("&irf3") == 0)
             {
                 iIRF_CH3 = tempdata;
-                qDebug() << iIRF_CH3.size();
+                //qDebug() << iIRF_CH3.size();
                 conn.write(set_ack(key, "1"));
 
             }
@@ -410,7 +421,7 @@ void startup(GUIupdater *ui)
             else if (key.compare("&irf4") == 0)
             {
                 iIRF_CH4 = tempdata;
-                qDebug() << iIRF_CH4.size();
+                //qDebug() << iIRF_CH4.size();
                 conn.write(set_ack(key, "1"));
 
             }
@@ -419,34 +430,36 @@ void startup(GUIupdater *ui)
             else if (key.compare("%dat1") == 0)
             {
                 data_CH1 = tempdata;
-                //qDebug() << "channel 1";
-               // qDebug() << len;
-                conn.write(set_ack(key, "1"));
+                double lifetime = decon->getLifetime(data_CH1,1);
+                acq->set_lifetime(lifetime,1);
+                conn.write(set_ack(key, std::to_string(lifetime)));
             }
 
             // channel 2 data
             else if (key.compare("%dat2") == 0)
             {
                 data_CH2 = tempdata;
-                //qDebug() << "channel 2";
-                conn.write(set_ack(key, "2"));
+                double lifetime = decon->getLifetime(data_CH2,2);
+                acq->set_lifetime(lifetime,2);
+                conn.write(set_ack(key, std::to_string(lifetime)));
             }
 
             // channel 3 data
             else if (key.compare("%dat3") == 0)
             {
                 data_CH3 = tempdata;
-                //qDebug() << "channel 3";
-                conn.write(set_ack(key, "3"));
+                double lifetime = decon->getLifetime(data_CH3,3);
+                acq->set_lifetime(lifetime,3);
+                conn.write(set_ack(key, std::to_string(lifetime)));
             }
 
             // channel 4 data
             else if (key.compare("%dat4") == 0)
             {
                 data_CH4 = tempdata;
-                // do laguerre here
-                //qDebug() << "channel 4";
-                conn.write(set_ack(key, "4"));
+                double lifetime = decon->getLifetime(data_CH4,4);
+                acq->set_lifetime(lifetime,4);
+                conn.write(set_ack(key, std::to_string(lifetime)));
             }
 
             // data point id
@@ -499,6 +512,14 @@ void startup(GUIupdater *ui)
                           :
                             STANDBY;
             ui->setMode(mode);
+
+            // do deconvolution
+            //if (data_ch1_ready && data_ch2_ready && data_ch3_ready && data_ch4_ready)
+            //{
+            //    vector<double> lifetimes;
+            //    lifetimes = decon->getLifetimes(data_CH1,data_CH2,data_CH3,data_CH4,0);
+            //    qDebug() << lifetimes[2];
+            //}
 
             readingThread.join();
 

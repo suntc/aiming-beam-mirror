@@ -34,7 +34,8 @@ void imageAcquisition::startAcquisition()
 
     // initialization
     frame = cam->getNextFrame();
-    Segmentation *seg = new Segmentation(frame, Point(1,1), Point(400,400), false, channel, false);
+
+    Segmentation *seg = new Segmentation(frame, Point(1,1), Point(frame.cols,frame.rows), false, channel, false);
 
     while (thread)
     {
@@ -50,7 +51,7 @@ void imageAcquisition::startAcquisition()
                 seg->thres = threshold;
 
                 // thread
-                boost::thread segmentationThread(ThreadWrapper::startSegmentationThread, seg, frame, 1., 1., 1., 1.);
+                boost::thread segmentationThread(ThreadWrapper::startSegmentationThread, seg, frame, ch1_tau, ch2_tau, ch3_tau, ch4_tau);
 
                 // wait for thread to end
                 segmentationThread.join();
@@ -80,4 +81,22 @@ void imageAcquisition::shutdownCamera()
     cam->disconnect();
     delete(cam);
 
+}
+
+void imageAcquisition::set_lifetime(double val, int channel)
+{
+    switch(channel)
+    {
+    case 1:
+        ch1_tau = val;
+        break;
+    case 2:
+        ch2_tau = val;
+        break;
+    case 3:
+        ch3_tau = val;
+        break;
+    case 4:
+        ch4_tau = val;
+    }
 }
