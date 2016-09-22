@@ -28,8 +28,6 @@ Overlay::Overlay(int size_x, int size_y, double scale_mn, double scale_mx)
     g = new vector<float> ( g1, g1 + sizeof(g1) / sizeof(int) );
     b = new vector<float> ( b1, b1 + sizeof(b1) / sizeof(int) );
 
-    //qDebug() << colormap.at<double>(300,1);
-    //qDebug() << colormap.at<double>(300,2);
 
     scale_max = scale_mx;
     scale_min = scale_mn;
@@ -39,6 +37,20 @@ Overlay::Overlay(int size_x, int size_y, double scale_mn, double scale_mx)
 Mat Overlay::getOverlay()
 {
     return RGBimage;
+}
+
+Mat Overlay::mergeOverlay(Mat frame)
+{
+    Mat mask;
+    Mat res = frame.clone();
+
+    cvtColor(RGBimage,mask,CV_BGR2GRAY);
+    threshold(mask, mask, 1, 1, 0);
+
+    RGBimage.copyTo(res,mask);
+
+    mask.release();
+    return res;
 }
 
 Mat Overlay::getColorBar()
@@ -88,14 +100,17 @@ void Overlay::setNewInterval(double mn, double mx)
 
 void Overlay::drawCircle(int x, int y, int radius, double val)
 {
-    if (val==0)
-            return;
-
     // highly efficient overlay computation :)
+
+    // make sure that the beam is inside the overlay
+    if (x-radius<0 || y-radius<0 || x+radius+1>accumulator.cols || y+radius+1>accumulator.rows)
+        return;
+
 
     Point pt1;
     pt1.x = radius;
     pt1.y = radius;
+
 
     // cut segment from accumulator
     Rect segmArea(x-radius, y-radius, 2*radius+1, 2*radius+1);

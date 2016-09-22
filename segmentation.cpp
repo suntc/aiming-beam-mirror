@@ -15,11 +15,14 @@
 using namespace cv;
 using namespace std;
 
+Segmentation::~Segmentation()
+{
+}
 
-Segmentation::Segmentation(Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ)
+Segmentation::Segmentation(Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ, bool stereo)
 {
 
-    // set parameters here
+    // Set up Gaussian functions for invivo segmentation
     radius_values = new int[14]; //14
     int c=0;
 
@@ -28,32 +31,36 @@ Segmentation::Segmentation(Mat frame, cv::Point point1, cv::Point point2, bool i
         radius_values[c]=i;
         c++;
     }
-
-    for (int i = 0; i < no_gaussians; i++) //no_gaussians
+    // Precompute functions
+    for (int i = 0; i < no_gaussians; i++)
       {
          Mat* tmp = createFilter(radius_values[i]);
          gaussians[i] = tmp;
       }
 
     // Presets. Do not change!
-    last_vanish = 1;
+    //last_vanish = 1;
 
+    // current channel for the overlay
     current_channel = ch_number;
 
+    // Set up resolution
     Size s = frame.size();
-
     res_x = s.width;
     res_y = s.height;
     last_x = res_x/2;
     last_y = res_y/2;
 
+    // Set up ROI
     if (point1.x!=point2.x && point1.y!=point2.y)
     {
+        // ROI defined by user
         ROI_left_upper = point1;
         ROI_right_lower = point2;
     }
     else
     {
+        // ROI covers entire region
         ROI_left_upper.x = 1;
         ROI_left_upper.y = 1;
         ROI_right_lower.x = res_x;
@@ -65,37 +72,68 @@ Segmentation::Segmentation(Mat frame, cv::Point point1, cv::Point point2, bool i
 //    else
 //        segmentation_selection=0;
 
+    // Set up interpolation settings
+
+    // 1: pick up marker, 2: automatically pick up aiming beam
+    segmentation_mode = 1;
+    // 1: Gaussian correlation, 2: Simple threshold
+    segmentation_method = 2;
+
+    // interpolate missing frames?
     segmentation_selection = interp;
+    // interpolate between successive frames?
     interpolation_successive_frames = interp_succ;
+    // if yes, how many interpolation steps?
+    num_of_int_steps = 5;
 
+    // Segmentation settings for invivo measurements
 
-    // Segmentation Settings
+    // for postprocessing only: number of frames where beam isnt seen before searching again on the entire ROI
     last_found = 5;
-    //thres = (float) 0.95;//0.958; // manually defined
+    // Threshold for activation. 0.958 was manually defined and found to be a good choice
+    thres = (float) 0.958;
 
-    area_dim = 40;
-    area_dim_l = 150;
+    // radius of the area around the last aiming beam position where the segmentation of the next frame is performed
+    area_dim = 0.14 * res_y; //50 at standard resolution
 
+    // if intensity is below this threshold the segmentation candidate is removed
     thres_intensity = 1; //20;
+    // size of the structural element for morphological erosion that removes specular highliths
     size_struct_elem = 8; //8;
 
-    num_of_int_steps=5;
+    // show marker on overlay
+    show_marker = true;
 
+    // for exvivo samples: extract first frame to segment only changes
+    subtract_first_frame = false; //false;
+
+    // stereo input for surface reconstruction?
+    stereo_setup = stereo;
+
+    int factor = round( res_y / 372 );
+    struct_size1 = factor * 3; // 3 at standard resolution
+    struct_size2 = factor * 1; // 1 at standard resolution
+
+    // initialize the overlays of all four channels
     ch1_overlay = new Overlay(res_x,res_y,2,3);
     ch2_overlay = new Overlay(res_x,res_y,2,3);
     ch3_overlay = new Overlay(res_x,res_y,2,3);
     ch4_overlay = new Overlay(res_x,res_y,2,3);
 
+    // the pointer overlay points to the overlay that is currently displayed
     switch(ch_number) {
         case 1:
         overlay=ch1_overlay;
         break;
+
         case 2:
         overlay=ch2_overlay;
         break;
+
         case 3:
         overlay=ch3_overlay;
         break;
+
         case 4:
         overlay=ch4_overlay;
         break;
@@ -108,6 +146,7 @@ void Segmentation::startSegmentation(Mat frame, double lt_ch1, double lt_ch2, do
     if (!firstFrameSet)
     {
         firstFrame = frame.clone();
+        //cvtColor(firstFrame, firstFrame, CV_BGR2Lab);
         firstFrameSet = true;
     }
 
@@ -131,6 +170,12 @@ void Segmentation::startSegmentation(Mat frame, double lt_ch1, double lt_ch2, do
     log_lt_ch2.push_back(lt_ch2);
     log_lt_ch3.push_back(lt_ch3);
     log_lt_ch4.push_back(lt_ch4);
+
+    Mat frame_diff = frame.clone();
+    if (subtract_first_frame)
+    {
+        frame_diff=frame-firstFrame;
+    }
 
     //if ( overlay == NULL && lifetime>0)
     //{
@@ -178,52 +223,80 @@ void Segmentation::startSegmentation(Mat frame, double lt_ch1, double lt_ch2, do
 
     int x, y, radius;
     float correlation;
-
-    //if (last_found > 4)
-    if (false)
+    if (segmentation_method==1)
     {
-       // int xfrom = res_x/2-area_dim_l;
-       // int yfrom = res_y/2-area_dim_l;
-       //  int xto = res_x/2+area_dim_l;
-       //  int yto = res_y/2+area_dim_l;
-
-        Rect corrArea(ROI_left_upper.x, ROI_left_upper.y, ROI_right_lower.x-ROI_left_upper.x, ROI_right_lower.y-ROI_left_upper.y);
-        Mat frame_cut = frame(corrArea);
-
-        correlation = correlateGaussian(frame_cut, x, y, radius);
-
-        //() << "Corr";
-        //qDebug() << correlation;
-        if (correlation > thres)
+        if (segmentation_mode==2 && last_found > 4)
         {
-            x = x+ROI_left_upper.x-1;
-            y = y+ROI_left_upper.y-1;
+            Rect corrArea(ROI_left_upper.x, ROI_left_upper.y, ROI_right_lower.x-ROI_left_upper.x, ROI_right_lower.y-ROI_left_upper.y);
+            Mat frame_cut = frame_diff(corrArea);
+
+            correlation = correlateGaussian(frame_cut, x, y, radius);
+
+            if (correlation > thres)
+            {
+                x = x+ROI_left_upper.x-1;
+                y = y+ROI_left_upper.y-1;
+            }
+
         }
-
-    }
-    else
-    {
-        int xfrom = (last_x-area_dim < ROI_left_upper.x ) ? ROI_left_upper.x  : last_x-area_dim;
-        int yfrom = (last_y-area_dim < ROI_left_upper.y ) ? ROI_left_upper.y  : last_y-area_dim;
-        int xto   = (last_x+area_dim > ROI_right_lower.x) ? ROI_right_lower.x : last_x+area_dim;
-        int yto   = (last_y+area_dim > ROI_right_lower.y) ? ROI_right_lower.y : last_y+area_dim;
-
-        Rect corrArea(xfrom, yfrom, xto-xfrom, yto-yfrom);
-        //if (corrArea.width<2*area_dim || corrArea.height<2*area_dim)
-        //{
-        //    last_found = 5;
-        //    float alpha = 0.5;
-        //    float beta = 0.5; //0.5; //( 1.0 - alpha );
-        //    addWeighted( frame, alpha, overlay->getOverlay(), beta, 0.0, frame);
-        //    return;
-        //}
-        Mat frame_cut = frame(corrArea);
-        correlation = correlateGaussian(frame_cut, x, y, radius);
-
-        if (correlation > thres)
+        else
         {
-            x = x+xfrom-1;
-            y = y+yfrom-1;
+            int xfrom = (last_x-area_dim < ROI_left_upper.x ) ? ROI_left_upper.x  : last_x-area_dim;
+            int yfrom = (last_y-area_dim < ROI_left_upper.y ) ? ROI_left_upper.y  : last_y-area_dim;
+            int xto   = (last_x+area_dim > ROI_right_lower.x) ? ROI_right_lower.x : last_x+area_dim;
+            int yto   = (last_y+area_dim > ROI_right_lower.y) ? ROI_right_lower.y : last_y+area_dim;
+
+            Rect corrArea(xfrom, yfrom, xto-xfrom, yto-yfrom);
+            Mat frame_cut = frame_diff(corrArea);
+            correlation = correlateGaussian(frame_cut, x, y, radius);
+
+            int x_n=last_x; int y_n=last_y;
+            if (correlation > thres)
+            {
+                x = x+xfrom-1;
+                y = y+yfrom-1;
+                x_n = x; y_n = y;
+            }
+        }
+    }
+    if (segmentation_method==2)
+    {
+        if (segmentation_mode==2)
+        {
+            Rect corrArea(ROI_left_upper.x, ROI_left_upper.y, ROI_right_lower.x-ROI_left_upper.x, ROI_right_lower.y-ROI_left_upper.y);
+            Mat frame_cut = frame_diff(corrArea);
+
+            correlation = simpleThreshold(frame_cut, x, y, radius);
+
+            if (correlation > thres)
+            {
+                x = x+ROI_left_upper.x-1;
+                y = y+ROI_left_upper.y-1;
+            }
+            else
+            {
+                x = last_x;
+                y = last_y;
+            }
+        }
+        else
+        {
+            int xfrom = (last_x-area_dim < ROI_left_upper.x ) ? ROI_left_upper.x  : last_x-area_dim;
+            int yfrom = (last_y-area_dim < ROI_left_upper.y ) ? ROI_left_upper.y  : last_y-area_dim;
+            int xto   = (last_x+area_dim > ROI_right_lower.x) ? ROI_right_lower.x : last_x+area_dim;
+            int yto   = (last_y+area_dim > ROI_right_lower.y) ? ROI_right_lower.y : last_y+area_dim;
+            Rect corrArea(xfrom, yfrom, xto-xfrom, yto-yfrom);
+            Mat frame_cut = frame_diff(corrArea);
+
+            correlation = simpleThreshold(frame_cut, x, y, radius);
+
+            int x_n=last_x; int y_n=last_y;
+            if (correlation > thres)
+            {
+                x = x+xfrom-1;
+                y = y+yfrom-1;
+                x_n = x; y_n = y;
+            }
         }
     }
     char str[10];
@@ -240,11 +313,13 @@ void Segmentation::startSegmentation(Mat frame, double lt_ch1, double lt_ch2, do
             int loop_counter = 1;
             for (std::vector<double>::iterator it = log_lifetime_failed.begin() ; it != log_lifetime_failed.end(); ++it)
             {
-                int x_new = (int) (log_coords_x_failed+( (float) (loop_counter*dx)/(float) no_int_points ));
-                int y_new = (int) (log_coords_y_failed+( (float) (loop_counter*dy)/(float) no_int_points ));
-                int rad_new = (int) (log_radius_failed+( (float) (loop_counter*dr)/(float) no_int_points ));
+                int x_new   = (int) (log_coords_x_failed+( (float) (loop_counter*dx)/(float) no_int_points ));
+                int y_new   = (int) (log_coords_y_failed+( (float) (loop_counter*dy)/(float) no_int_points ));
+                int rad_new = (int) (log_radius_failed  +( (float) (loop_counter*dr)/(float) no_int_points ));
                 loop_counter++;
+
                 overlay->drawCircle(x_new,y_new,rad_new*0.5,*it);
+
             }
             log_lifetime_failed.clear();
         }
@@ -262,7 +337,7 @@ void Segmentation::startSegmentation(Mat frame, double lt_ch1, double lt_ch2, do
 
         int loop_counter = 1;
 
-        if (interpolation_successive_frames==1 && last_found==1 && (last_x-x)*(last_x-x)+(last_y-y)*(last_y-y)>25 )
+        if (interpolation_successive_frames==1 && last_found==1 && (last_x-x)*(last_x-x)+(last_y-y)*(last_y-y)>5 )
         {
             int dx = x-last_x;
             int dy = y-last_y;
@@ -294,7 +369,6 @@ void Segmentation::startSegmentation(Mat frame, double lt_ch1, double lt_ch2, do
         ch3_overlay->drawCircle(x,y,radius*0.5,lt_ch3);
         ch4_overlay->drawCircle(x,y,radius*0.5,lt_ch4);
 
-
         putText(frame, str, Point2f(100,100), FONT_HERSHEY_PLAIN, 2,  Scalar(255,0,0,255));
 
         log_coords_x.push_back(x);
@@ -308,6 +382,8 @@ void Segmentation::startSegmentation(Mat frame, double lt_ch1, double lt_ch2, do
         last_lt_ch2=lt_ch2;
         last_lt_ch3=lt_ch3;
         last_lt_ch4=lt_ch4;
+
+        last_active = true;
     }
     else
     {
@@ -320,12 +396,12 @@ void Segmentation::startSegmentation(Mat frame, double lt_ch1, double lt_ch2, do
             log_radius_failed = last_radius;
         }
         log_lifetime_failed.push_back(lifetime);
-
         log_coords_x.push_back(0);
         log_coords_y.push_back(0);
         log_radius.push_back(0);
 
         putText(frame, str, Point2f(100,100), FONT_HERSHEY_PLAIN, 2,  Scalar(0,0,255,255));
+        last_active=false;
     }
 
 
@@ -334,14 +410,255 @@ void Segmentation::startSegmentation(Mat frame, double lt_ch1, double lt_ch2, do
     //frame.at<uchar>(x,y)[1]=128;
 
     float alpha = 0.5;
-    float beta = 0.5; //0.5; //( 1.0 - alpha );
-    //if (overlay != NULL)
-        addWeighted( frame, alpha, overlay->getOverlay(), beta, 0.0, frame);
-    //addWeighted( frame, alpha, overlay->getColorBar(), beta, 0.0, frame);
+    float beta = 0.5;
 
+    if (!stereo_setup)
+        addWeighted( frame, alpha, overlay->mergeOverlay(frame), beta, 0.0, frame);
 
+    if (show_marker==true)
+        ellipse(frame, Point(x,y), Size(5,5), 0, 0, 360, Scalar( 0, 0, 0 ), 3, 8, 0);
+
+    //char str[10];
+    //sprintf(str,"%f",lifetime);
+    //putText(frame, str, Point2f(200,200), FONT_HERSHEY_PLAIN, 2,  Scalar(0,255,0,255));
     //imshow("activeDisplay", dst );
     return;
+}
+
+float Segmentation::simpleThreshold(cv::Mat frame, int &x, int &y, int &radius)
+{
+    Mat frame_hsv;
+    cvtColor(frame, frame_hsv, CV_BGR2HSV);
+    //Mat ch_L; Mat ch_a; Mat ch_b;
+    //extractChannel (frame_lab, ch_L, 0 );
+    //extractChannel (frame_lab, ch_a, 1 );
+    //extractChannel (frame_lab, ch_b, 2 );
+
+    int hue_min = 85;  // Hue min
+    int hue_max = 120; // Hue max
+    int sat_min = 50;  // Saturation min
+    int sat_max = 255; // Saturation max
+    int val_min = 50;  // Value min
+    int val_max = 255; // Value max
+
+    Mat frameBlueOCL;
+    inRange(frame_hsv, Scalar(hue_min, sat_min, val_min), Scalar(hue_max, sat_max, val_max), frameBlueOCL); // HSV thresholding
+
+    //x = 0;
+    //y = 0;
+    radius = 10;
+
+    //const char * filename1 = "test.jpg";
+    //cvSaveImage(filename1, &(IplImage(frameBlueOCL)));
+
+    int struct_type = MORPH_ELLIPSE;    // Structured element type is ellipse
+
+    Mat element0 = getStructuringElement(struct_type, Size(2*struct_size2 + 1, 2*struct_size2 + 1),Point(-1, -1)); // Create structured element of size 1
+    Mat element = getStructuringElement(struct_type, Size(2*struct_size1 + 1, 2*struct_size1 + 1),Point(-1, -1)); // Creat structured element of size 3
+    morphologyEx(frameBlueOCL, frameBlueOCL, MORPH_DILATE, element0); // Dilation with structured element of size 1
+    morphologyEx(frameBlueOCL, frameBlueOCL, MORPH_ERODE, element); // Erosion with structured element of size 3
+    morphologyEx(frameBlueOCL, frameBlueOCL, MORPH_DILATE, element); // Dilation with structured element of size 3
+    morphologyEx(frameBlueOCL, frameBlueOCL, MORPH_ERODE, element0); // Erosion with structured element of size 1
+
+    // Initialize segmentation vectors
+    vector<vector<Point> > contours;
+    vector<Vec4i> hierarchy;
+
+
+
+
+    int maxPos=0; // Minimum Euclidean distance
+
+    //const char * filename1 = "test.jpg";
+    //cvSaveImage(filename1, &(IplImage(frameBlueOCL)));
+
+    // Find Contours
+    findContours(frameBlueOCL, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+    vector<double> meanIntVals(contours.size()); // Create Euclidean distances vector
+
+    //qDebug() << contours.size();
+
+    //const char * filename1 = "test.jpg";
+    //cvSaveImage(filename1, &(IplImage(frameBlueOCL)));
+
+    vector<RotatedRect> minEllipse(contours.size()); // Create ellipses vector
+    for(int i = 0; i < (int)contours.size(); i++) // For all the contours
+    {
+
+        int contourSize = contourArea(contours[i], false); // Find the size of the current contour
+
+
+
+        if (contourSize > 5 && contourSize < 50000 && contours[i].size() > 4) // If contour size is larger than 5 pixels, smaller than 10000 pixels and there are more than 4 contour points
+        {
+            // Find distance from previous ellipse
+            minEllipse[i] = fitEllipse(Mat(contours[i])); // Fit ellipse to the contour
+            double x1, y1, x_old, y_old; // Coordinates of the current and previous ellipses centers
+            x1 = minEllipse[i].center.x; // Current ellipse center x coordinate
+            y1 = minEllipse[i].center.y; // Current ellipse center y coordinate
+            if (last_x!=res_x/2)
+            {
+                x_old = last_x; // Previous ellipse center x coordinate
+                y_old = last_y; // Previous ellipse center y coordinate
+            }
+            else
+            {
+                x_old = x1;
+                y_old = y1;
+            }
+            double dx;
+            dx = minEllipse[i].size.height + minEllipse[i].size.width;
+             //       sqrt((( (x1+offset_x) - x_old) * ((x1+offset_x) - x_old)) + (((y1+offset_y) - y_old) * ((y1+offset_y) - y_old))); // Euclidean distance between the centers of the two ellipses
+            //dx = sqrt((( (x1) - x_old) * ((x1) - x_old)) + (((y1) - y_old) * ((y1) - y_old))); // Euclidean distance between the centers of the two ellipses
+            meanIntVals[i] = dx; // Store Euclidean distance in vectro
+        }
+        else // else
+        {
+            meanIntVals[i] = 1000;
+        }
+    }
+    // Draw Ellipse
+    if (contours.size() > 0) // If there exist contours
+    {
+
+        //maxPos = distance(meanIntVals.begin(), min_element(meanIntVals.begin(), meanIntVals.end()));
+        maxPos = distance(meanIntVals.begin(), max_element(meanIntVals.begin(), meanIntVals.end()));
+
+        if ((meanIntVals[maxPos] < 1000)) //100 //|| (dataold.at<double>(0, 0) == round(frameOnline.cols / 2))) // If current Euclidean distance is smaller than 100 pixels or the previous ellipse's center x coordinate is at the center of the image
+        {
+        //maxPos = distance(meanIntVals.begin(), min_element(meanIntVals.begin(), meanIntVals.end())); // Find the minimum Euclidean distance
+            // Fit Gaussian
+            double PI = 3.14159265;
+            double lineangle = tan((90 + minEllipse[maxPos].angle) * PI / 180.0); // Find the angle of the major axis
+
+            // Create the line that is on the major axis and equal twice of its length (see paper for more details)
+            double x1 = minEllipse[maxPos].center.x + ((minEllipse[maxPos].size.height) / sqrt((lineangle * lineangle) + 1));
+            double x2 = minEllipse[maxPos].center.x - ((minEllipse[maxPos].size.height) / sqrt((lineangle * lineangle) + 1));
+            double y1 = minEllipse[maxPos].center.y + ((lineangle * (minEllipse[maxPos].size.height)) / sqrt((lineangle * lineangle) + 1));
+            double y2 = minEllipse[maxPos].center.y - ((lineangle * (minEllipse[maxPos].size.height)) / sqrt((lineangle * lineangle) + 1));
+
+            // Get the blue channel values of the RGB image that fall on the line and create the linear model (see paper for more)
+            LineIterator it(frame, Point (x1, y1), Point (x2, y2), 8);
+            Mat I_val(Mat_<double>(it.count, 1));
+            Mat x_val(Mat_<double>(it.count, 3));
+
+            if (x1==0 || x2==0 || y1==0 || y2==0)
+            {
+                return 0;
+            }
+            for(int i = 0; i < it.count; i++, ++it)
+            {
+                Vec3b val = frame.at<Vec3b>(it.pos());
+                x_val.at<double>(i, 0) = (double)i * (double)i;
+                x_val.at<double>(i, 1) = (double)i;
+                x_val.at<double>(i, 2) = 1.0;
+                I_val.at<double>(i, 0) = (double)val[0];
+            }
+            double minVal;
+            double maxVal;
+            minMaxIdx(I_val, &minVal, &maxVal);
+            subtract(I_val, (minVal - 1), I_val);
+            if (it.count<=1)
+                return 0;
+            I_val.at<double>(0, 0) = 1;
+            I_val.at<double>((it.count - 1), 0) = 1;
+
+            log(I_val, I_val);
+            Mat I_out;
+
+            // Solve the linear model to fit the Gaussian (see paper for more)
+            solve(x_val, I_val, I_out, DECOMP_SVD);
+
+            // Scale Ellipse
+            double sigma = abs(sqrt(- 1.0 / (2.0 * I_out.at<double>(0, 0)))); // Estimate the Gaussian sigma value
+            double FWHM = 2.0 * sigma * sqrt(- 2.0 * log(0.5)); // Estimate FWHM from sigma value (see paper for equations and more)
+            double FW075M = 2.0 * sigma * sqrt(- 2.0 * log(0.75)); // Estimate FW075M from sigma value
+            double FW09M = 2.0 * sigma * sqrt(- 2.0 * log(0.9)); // Estimate FW09M from sigma value
+
+            // Scale accordingly the minor axis of the ellipse
+            double scaleVal_FWHM = minEllipse[maxPos].size.width / (minEllipse[maxPos].size.height / FWHM);
+            double scaleVal_FW09M = minEllipse[maxPos].size.width / (minEllipse[maxPos].size.height / FW09M);
+            double scaleVal_FW075M = minEllipse[maxPos].size.width / (minEllipse[maxPos].size.height / FW075M);
+
+            // Initialize the mats that have the current scaled ellipses
+            //allImages.singleEllipse_FWHM = Mat::zeros(frameSegmIn.rows, frameSegmIn.cols, CV_8UC1);
+            //allImages.singleEllipse_FW09M = Mat::zeros(frameSegmIn.rows, frameSegmIn.cols, CV_8UC1);
+            //allImages.singleEllipse_FW075M = Mat::zeros(frameSegmIn.rows, frameSegmIn.cols, CV_8UC1);
+            // Make Single Ellipses
+            if (!isnan(FWHM)) // If the FWHM is a finite value (Gaussian fit was successful)
+            {
+       //         minEllipse[maxPos].size.height = FWHM; // Update ellipse's height
+       //         minEllipse[maxPos].size.width = scaleVal_FWHM; // Update ellipse's width
+
+                //ellipse(allImages.singleEllipse_FWHM, minEllipse[maxPos], Scalar(255), -1, 8); // Create ellipse
+
+                minEllipse[maxPos].size.height = FW075M; // Update ellipse's height
+                minEllipse[maxPos].size.width = scaleVal_FW075M; // Update ellipse's width
+
+                //ellipse(allImages.singleEllipse_FW075M, minEllipse[maxPos], Scalar(255), -1, 8); // Create ellipse
+
+       //         minEllipse[maxPos].size.height = FW09M; // Update ellipse's height
+       //         minEllipse[maxPos].size.width = scaleVal_FW09M; // Update ellipse's width
+                //ellipse(allImages.singleEllipse_FW09M, minEllipse[maxPos], Scalar(255), -1, 8); // Create ellipse
+            }
+            else // If the FWHM does not have a finite value (Gaussian fit failed)
+            {
+                minEllipse[maxPos].size.height = minEllipse[maxPos].size.height / 3; // Scale ellipse's height to 1/3
+                minEllipse[maxPos].size.width = minEllipse[maxPos].size.width / 3; // Scale ellipse's width to 1/3
+
+                // Create corresponding ellipses
+                //ellipse(allImages.singleEllipse_FWHM, minEllipse[maxPos], Scalar(255), -1, 8);
+                //ellipse(allImages.singleEllipse_FW075M, minEllipse[maxPos], Scalar(255), -1, 8);
+                //ellipse(allImages.singleEllipse_FW09M, minEllipse[maxPos], Scalar(255), -1, 8);
+
+                // Update widths
+                FWHM = minEllipse[maxPos].size.height / 3;
+                FW075M = minEllipse[maxPos].size.height / 3;
+                FW09M = minEllipse[maxPos].size.height / 3;
+            }
+
+            // Make Masks and label cases for painting
+       //     if (meanIntVals[maxPos] <= FW09M) // If the Euclidean distance between current and previous ellipses is smaller than or equal to FW09M
+       //     {
+                //allImages.bwEllipsesMask.setTo(Scalar(255), allImages.singleEllipse_FW075M); // The external ellipse is FW075M (see paper for more)
+       //         case_FW = 0; // Case for painting is 0
+       //     }
+       //     else if ((meanIntVals[maxPos] > FW09M) && (meanIntVals[maxPos] <= FW075M)) // If the Euclidean distance between current and previous ellipses is larger than FW09M and smaller than or equal to FW075M
+       //     {
+                //allImages.bwEllipsesMask.setTo(Scalar(255), allImages.singleEllipse_FWHM); // The external ellipse is FWHM (see paper for more)
+       //         case_FW = 1; // Case for painting is 1
+       //     }
+       //     else // in all other cases
+       //     {
+                //allImages.bwEllipsesMask.setTo(Scalar(255), allImages.singleEllipse_FWHM); // The external ellipse is FWHM (see paper for more)
+       //         case_FW = 2; // Case for painting is 2
+       //     }
+
+            //ellipse(frameOnline, minEllipse[maxPos], Scalar(0, 0, 0), 1, 8); // Draw smallest ellipse in running frame
+            //line(frameOnline, Point (x1, y1), Point (x2, y2), Scalar(0, 0, 0), 1); // Draw line used for Gaussian fit in running frame
+        }
+        else
+        {
+            return 0;
+        }
+
+        radius = ( minEllipse[maxPos].size.height+minEllipse[maxPos].size.width ) / 2;
+        x = minEllipse[maxPos].center.x;
+        y = minEllipse[maxPos].center.y;
+
+        if (x==0 || y==0)
+        {
+            return 0;
+        }
+    }
+    else
+    {
+        x = last_x;
+        y = last_y;
+
+        return 0;
+    }
+    return 1;
 }
 
 float Segmentation::correlateGaussian(cv::Mat frame, int &x, int &y, int &radius)
@@ -352,7 +669,7 @@ float Segmentation::correlateGaussian(cv::Mat frame, int &x, int &y, int &radius
     cvtColor(frame, frame_lab, CV_BGR2Lab);
 
     extractChannel (frame_lab, intensity, 0 );
-    extractChannel (frame_lab, frame_lab, 2 );
+    extractChannel (frame_lab, frame_lab, 2 ); //2
 
     int x_list[no_gaussians];
     int y_list[no_gaussians];
@@ -379,7 +696,7 @@ float Segmentation::correlateGaussian(cv::Mat frame, int &x, int &y, int &radius
             y_list[i] = 0;
             continue;
         }
-        matchTemplate(frame_lab, *gaussians[i], corr, CV_TM_CCORR_NORMED);//CV_TM_CCORR_NORMED
+        matchTemplate(frame_lab, *gaussians[i], corr, CV_TM_CCORR_NORMED);
         Size s = corr.size();
         int corr_dim_x = s.height;
         int corr_dim_y = s.width;
@@ -401,12 +718,11 @@ float Segmentation::correlateGaussian(cv::Mat frame, int &x, int &y, int &radius
     int ind = distance(max_list, max_element(max_list, max_list + N));
 
 
-    //qDebug() << x;
-    //qDebug() << y;
-    //qDebug() << frame_lab.at<unsigned char>(y,x);
-    //char str[10];
-    //sprintf(str,"%u",frame_lab.at<unsigned char>(y,x)); // %f correlation
-    //putText(frame, str, Point2f(300,100), FONT_HERSHEY_PLAIN, 2,  Scalar(255,0,0,255));
+        //qDebug() << y;
+        //qDebug() << frame_lab.at<unsigned char>(y,x);
+        //char str[10];
+        //sprintf(str,"%u",frame_lab.at<unsigned char>(y,x)); // %f correlation
+        //putText(frame, str, Point2f(300,100), FONT_HERSHEY_PLAIN, 2,  Scalar(255,0,0,255));
 
 
     return max_list[ind];

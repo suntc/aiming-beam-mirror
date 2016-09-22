@@ -6,7 +6,6 @@
 
 
 using namespace std;
-//using namespace cv;
 
 class Overlay
 {
@@ -21,6 +20,7 @@ public:
     void setNewInterval(double mn, double mx);
     void Overlay::drawColorBar();
     cv::Mat values;
+    cv::Mat mergeOverlay(cv::Mat frame);
 private:
 
     cv::Mat accumulator;

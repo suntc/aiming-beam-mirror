@@ -77,6 +77,7 @@ void startup(GUIupdater *ui)
     float time_resolution = 0;  // digitizer time resolution, value in ns
     int data_length = 0;    // length of the fluorescence data in each channel?
     int irf_length = 0;     // length of the IRF in each channel
+    int run = 0;    // run number
 
     // lifetime boundaries & other display parameters
     bool lt_auto = true; // automatic scale
@@ -85,6 +86,9 @@ void startup(GUIupdater *ui)
     int channel = 2;    // channel to be displayed
     int ansi = 5;       // ansi limit, as the maximum number of frames that a single pixel can be imaged
     float threshold = 0.96;    // cross-correlation threshold
+    int width = 852;    // display width (number of columns)
+    int height = 479;   // display height (number of rows)
+
 
     // image acquisition settings
     bool focus = false;     // if true, manual focus is on and camera is streaming
@@ -94,10 +98,8 @@ void startup(GUIupdater *ui)
     int mode = OFFLINE;
     ui->setMode(mode);
 
-    // initialize image acquisition object
+    // initialize image acquisition object (this is for the exvivo camera only. may need to be changed in the future)
     imageAcquisition *acq = new imageAcquisition();
-
-
     while (!acq->ready)
     {
         ui->throwError("Camera not detected");
@@ -114,8 +116,10 @@ void startup(GUIupdater *ui)
         // reconnect to camera
         acq->startupCamera(channel, threshold);
 
-
     }
+
+    // camera is up and running. define default resolution
+    acq->set_resolution(width, height);
 
     ui->setError(false);
 
@@ -124,7 +128,7 @@ void startup(GUIupdater *ui)
 
     // make sure we are alive
     conn.write("alive\r\n");
-
+ qDebug() << "hier3";
     // check connection
     if (conn.isOpen()){
 
@@ -231,6 +235,7 @@ void startup(GUIupdater *ui)
             {
 
                 subject = value;
+                acq->subject = value;
 
                 // send acknowledgment
                 conn.write("test\r\n");
@@ -376,6 +381,43 @@ void startup(GUIupdater *ui)
                 //qDebug() << threshold;
 
                 conn.write(set_ack(key, value));
+            }
+
+            // display resolution
+            else if (key.compare("!display_res") == 0)
+            {
+
+                if (value.compare("low") == 0) // low res, values are the same as in previous software (unknown reason for such specific w x h)
+                {
+                    width = 852;
+                    height = 459;
+                }
+                else // high res, HD standard (may need to be changed in the future)
+                {
+                    width = 1280;
+                    height = 720;
+                }
+
+                // adjust resolution for segmentation
+                acq->set_resolution(width, height);
+
+                // acknowledge
+                conn.write(set_ack(key, value));
+            }
+
+            // run number
+            else if (key.compare("!run") == 0)
+            {
+                // set run number
+                run = stoi(value);
+                acq->run_number = run;
+
+                qDebug() << "RUN";
+                qDebug() << run;
+
+                // acknowledge tcp connection
+                conn.write(set_ack(key, value));
+
             }
 
             // query mode

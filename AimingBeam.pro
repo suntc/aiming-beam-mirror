@@ -24,7 +24,12 @@ SOURCES += main.cpp\
     segmentation.cpp \
     errorhandler.cpp \
     laguerredeconvolution.cpp \
-    deconvolveprocess.cpp
+    deconvolveprocess.cpp \
+    videowriter_ab.cpp \
+    iopath.cpp \
+    stereosegmentation.cpp \
+    stereocalibration.cpp \
+    videopointgreystereo.cpp
 
 
 INCLUDEPATH += "C:\Opt\Boost\include\boost-1_55"
@@ -39,6 +44,8 @@ LIBS += -LC:\Opt\OpenCV\x64\vc12\lib -lopencv_core300
 LIBS += -LC:\Opt\OpenCV\x64\vc12\lib -lopencv_imgproc300
 LIBS += -LC:\Opt\OpenCV\x64\vc12\lib -lopencv_videoio300
 LIBS += -LC:\Opt\OpenCV\x64\vc12\lib -lopencv_imgcodecs300
+LIBS += -LC:\Opt\OpenCV\x64\vc12\lib -lopencv_calib3d300
+LIBS += -LC:\Opt\OpenCV\x64\vc12\lib -lopencv_features2d300
 
 # uEye camera
 LIBS += -L"C:\Program Files\IDS\uEye\Develop\Lib" -luEye_api_64
@@ -71,6 +78,13 @@ HEADERS  += mainwindow.h \
     segmentation.h \
     errorhandler.h \
     laguerredeconvolution.h \
-    deconvolveprocess.h
+    deconvolveprocess.h \
+    videowriter_ab.h \
+    videooutput.h \
+    iopath.h \
+    stereosegmentation.h \
+    stereocalibration.h \
+    videoinputstereo.h \
+    videopointgreystereo.h
 
 FORMS    += mainwindow.ui

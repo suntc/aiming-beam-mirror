@@ -70,7 +70,6 @@ bool VideoPointGrey::isConnected()
 cv::Mat VideoPointGrey::getNextFrame( )
 {
     // Get the image
-
     error = cam.RetrieveBuffer( &rawImage );
 
     if ( error != PGRERROR_OK )
@@ -85,9 +84,12 @@ cv::Mat VideoPointGrey::getNextFrame( )
     // convert to OpenCV Mat
     unsigned int rowBytes = (double)rgbImage.GetReceivedDataSize()/(double)rgbImage.GetRows();
     cv::Mat image = cv::Mat(rgbImage.GetRows(), rgbImage.GetCols(), CV_8UC3, rgbImage.GetData(),rowBytes);
+    //qDebug() << width;
+    //qDebug() << height;
+    //cv::Mat image = cv::Mat(height, width, CV_8UC3, rgbImage.GetData(),rowBytes);
+
     return image.clone();
 }
-
 
 bool VideoPointGrey::lastFrame()
 {
@@ -103,5 +105,11 @@ void VideoPointGrey::disconnect()
 {
     cam.Disconnect();
     connected = false;
+}
+
+void VideoPointGrey::set_resolution(int w, int h)
+{
+    width = w;
+    height = h;
 }
 

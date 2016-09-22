@@ -17,6 +17,7 @@ public:
     int getNumberOfFrames();
     void disconnect();
     bool isConnected();
+    void set_resolution(int w, int h);
 private:
     CameraInfo camInfo;
     Camera cam;
@@ -27,6 +28,8 @@ private:
     Image rawImage;
     Image rgbImage;
     bool connected = false;
+    int width;
+    int height;
 };
 
 #endif // VIDEOPOINTGREY_H
