@@ -16,7 +16,6 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     tcp_ip.cpp \
     guiupdater.cpp \
-    camera.cpp \
     videopointgrey.cpp \
     imageacquisition.cpp \
     threadwrapper.cpp \
@@ -34,7 +33,7 @@ SOURCES += main.cpp\
 
 INCLUDEPATH += "C:\Opt\Boost\include\boost-1_55"
 INCLUDEPATH += "C:\Opt\OpenCV\include"
-INCLUDEPATH += "C:\Program Files\IDS\uEye\Develop\include"
+#INCLUDEPATH += "C:\Program Files\IDS\uEye\Develop\include"
 INCLUDEPATH += "C:\Opt\Boost\include\boost-1_55"
 INCLUDEPATH += "C:\Opt\FlyCapture2\include"
 
@@ -48,8 +47,8 @@ LIBS += -LC:\Opt\OpenCV\x64\vc12\lib -lopencv_calib3d300
 LIBS += -LC:\Opt\OpenCV\x64\vc12\lib -lopencv_features2d300
 
 # uEye camera
-LIBS += -L"C:\Program Files\IDS\uEye\Develop\Lib" -luEye_api_64
-LIBS += -L"C:\Program Files\IDS\uEye\Develop\Lib" -luEye_tools_64
+#LIBS += -L"C:\Program Files\IDS\uEye\Develop\Lib" -luEye_api_64
+#LIBS += -L"C:\Program Files\IDS\uEye\Develop\Lib" -luEye_tools_64
 
 # new camera
 LIBS += -LC:\Opt\FlyCapture2\lib64 -lFlyCapture2
@@ -69,7 +68,6 @@ LIBS += -lMswsock
 HEADERS  += mainwindow.h \
     tcp_ip.h \
     guiupdater.h \
-    camera.h \
     videoinput.h \
     videopointgrey.h \
     imageacquisition.h \

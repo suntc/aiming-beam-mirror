@@ -78,6 +78,7 @@ void startup(GUIupdater *ui)
     int data_length = 0;    // length of the fluorescence data in each channel?
     int irf_length = 0;     // length of the IRF in each channel
     int run = 0;    // run number
+    bool stereomode = false;    // stereomode on or off
 
     // lifetime boundaries & other display parameters
     bool lt_auto = true; // automatic scale
@@ -93,6 +94,7 @@ void startup(GUIupdater *ui)
     // image acquisition settings
     bool focus = false;     // if true, manual focus is on and camera is streaming
     bool acquire = false;   // if true, enter in acquisition mode
+
 
     // initialise application mode
     int mode = OFFLINE;
@@ -128,7 +130,7 @@ void startup(GUIupdater *ui)
 
     // make sure we are alive
     conn.write("alive\r\n");
- qDebug() << "hier3";
+    //qDebug() << "hier3";
     // check connection
     if (conn.isOpen()){
 
@@ -211,7 +213,7 @@ void startup(GUIupdater *ui)
 
 
                 // disconnecting from peer
-                qDebug() << "disconnecting";
+                //qDebug() << "disconnecting";
 
                 // send acknowledgment
                 conn.write("disconnect:1\r\n");
@@ -412,12 +414,30 @@ void startup(GUIupdater *ui)
                 run = stoi(value);
                 acq->run_number = run;
 
-                qDebug() << "RUN";
-                qDebug() << run;
+                //qDebug() << "RUN";
+                //qDebug() << run;
 
                 // acknowledge tcp connection
                 conn.write(set_ack(key, value));
 
+            }
+
+            // set for 3d mode
+            else if (key.compare("!3dset") == 0)
+            {
+                stereomode = (value.compare("1") == 0) ? true : false;
+
+                //acknowledge
+                conn.write(set_ack(key, value));
+            }
+
+            // start 3d calibration
+            else if (key.compare("!3dcal") == 0)
+            {
+                // start 3d calibration here
+
+                // acknowledge command
+                conn.write(set_ack(key, "1"));
             }
 
             // query mode
@@ -525,7 +545,7 @@ void startup(GUIupdater *ui)
 
                     if (!conn.isOpen())
                     {
-                        qDebug() << "To disconnect";
+                        //qDebug() << "To disconnect";
 
                         // disconnect
                         conn.disconnect();

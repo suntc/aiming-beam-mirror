@@ -20,14 +20,15 @@ void imageAcquisition::startupCamera(int ch, float thres)
 {
 
     // startup camera
-   //cam = new VideoPointGrey();
-    stereo_cam = new VideoPointGreyStereo();
+   cam = new VideoPointGrey();
+   //stereo_cam = new VideoPointGreyStereo();
 
    channel = ch; // channel to be displayed
    threshold = thres; // cross-correlation threshold
 
    // check if at least one camera is connected
-   if (stereo_cam->isConnected())
+   //if (stereo_cam->isConnected())
+   if (cam->isConnected())
    {
        ready = true;
    }
@@ -36,25 +37,28 @@ void imageAcquisition::startupCamera(int ch, float thres)
 
 void imageAcquisition::startAcquisition()
 {
+    //qDebug() << "image acq";
 
     // initialization
-    frame = stereo_cam->getNextFrame(0);
+    //frame = stereo_cam->getNextFrame(0);
+    frame = cam->getNextFrame();
 
-    //Segmentation *seg = new Segmentation(frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false, false);
-    StereoCalibration *calib = new StereoCalibration("C:/Users/Marcu Lab/Documents/AimingBeamV2/build-AimingBeam-Desktop_Qt_5_3_MSVC2013_OpenGL_64bit-Release/release/stereo_calibration.yml");
-    StereoSegmentation *seg  = new StereoSegmentation(calib, frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false);
+    Segmentation *seg = new Segmentation(frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false, false);
+    //StereoCalibration *calib = new StereoCalibration("C:/Users/Marcu Lab/Documents/AimingBeamV2/build-AimingBeam-Desktop_Qt_5_3_MSVC2013_OpenGL_64bit-Release/release/stereo_calibration.yml");
+    //StereoSegmentation *seg  = new StereoSegmentation(calib, frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false);
 
     bool init_output = false;
     VideoOutput *avi_out_augmented;
     VideoOutput *avi_out_raw;
 
-
     while (thread)
     {
-
         if (ctrl)
         {
-            if( init_output==false)
+            // this should not be available for manual focus operation
+
+            //if( init_output==false)
+            if (false)
             {
                 std::string infix = subject;
                 infix.append("_run");
@@ -69,12 +73,15 @@ void imageAcquisition::startAcquisition()
             }
 
             // get frame
+            frame = cam->getNextFrame();
+
+            /*
             frame = stereo_cam->getNextFrame(0);
             Mat frame_r = stereo_cam->getNextFrame(1);
             Mat frame_l = frame.clone();
             frame_l = calib->getRectifiedIm(frame_l,0);
             frame_r = calib->getRectifiedIm(frame_r,1);
-
+            */
 
             // if in acquisition, do segmentation
             if (inAcquisition)
@@ -83,17 +90,17 @@ void imageAcquisition::startAcquisition()
           //      avi_out_raw->addFrame(frame);
 
                 // set segmentation threshold
-                //seg->thres = threshold;
+                seg->thres = threshold;
 
                 // thread
-                //boost::thread segmentationThread(ThreadWrapper::startSegmentationThread, seg, frame, ch1_tau, ch2_tau, ch3_tau, ch4_tau);
-                boost::thread segmentationThread(ThreadWrapper::startStereoSegmentationThread, seg, frame_l, frame_r, frame, ch1_tau, ch2_tau, ch3_tau, ch4_tau);
+                boost::thread segmentationThread(ThreadWrapper::startSegmentationThread, seg, frame, ch1_tau, ch2_tau, ch3_tau, ch4_tau);
+                //boost::thread segmentationThread(ThreadWrapper::startStereoSegmentationThread, seg, frame_l, frame_r, frame, ch1_tau, ch2_tau, ch3_tau, ch4_tau);
 
                 // wait for thread to end
                 segmentationThread.join();
 
                 // add segmented frame to avi export
-           //     avi_out_augmented->addFrame(frame);
+                //     avi_out_augmented->addFrame(frame);
             }
 
             // show frame
@@ -105,11 +112,16 @@ void imageAcquisition::startAcquisition()
                 destroyWindow("Manual focus");
                 delete(seg);
 
-                //seg = new Segmentation(frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false, false);
-                seg = new StereoSegmentation(calib, frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false);
-                avi_out_augmented->closeFile();
-                avi_out_raw->closeFile();
-                init_output=false;
+                seg = new Segmentation(frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false, false);
+                //seg = new StereoSegmentation(calib, frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false);
+
+                // need to handle this properly for manual focussing
+                if (false)
+                {
+                    avi_out_augmented->closeFile();
+                    avi_out_raw->closeFile();
+                    init_output=false;
+                }
             }
         }
 
@@ -118,14 +130,19 @@ void imageAcquisition::startAcquisition()
     //destroyAllWindows();
 
     // cleanup
-    avi_out_augmented->closeFile();
-    delete(avi_out_augmented);
-    avi_out_raw->closeFile();
-    delete(avi_out_raw);
-    //cam->disconnect();
-    //delete(cam);
-    stereo_cam->disconnect();
-    delete(stereo_cam);
+
+    // need to handle this properly for manual focussing
+    if (false)
+    {
+        avi_out_augmented->closeFile();
+        delete(avi_out_augmented);
+        avi_out_raw->closeFile();
+        delete(avi_out_raw);
+    }
+    cam->disconnect();
+    delete(cam);
+    //stereo_cam->disconnect();
+    //delete(stereo_cam);
     delete(seg);
 
 }
