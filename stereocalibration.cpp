@@ -19,6 +19,7 @@ StereoCalibration::StereoCalibration(string filename)
     loadCalibration(filename);
     convertMaps(rmap00, rmap01, map_x0, map_y0, CV_32FC1 , false );
     convertMaps(rmap10, rmap11, map_x1, map_y1, CV_32FC1 , false );
+    RX = getRotationAngleBetweenCameras();
 }
 
 StereoCalibration::StereoCalibration(VideoInputStereo * stereoInput, Size boardSize, float squareSize)
@@ -32,7 +33,9 @@ void StereoCalibration::captureCalibImages(VideoInputStereo * stereoInput, Size 
     Mat im_left;
     Mat im_right;
 
-    cvNamedWindow("calibration", CV_WINDOW_NORMAL);
+    //cvNamedWindow("calibration", CV_WINDOW_NORMAL);
+    cvNamedWindow("calibration", CV_WINDOW_FULLSCREEN);
+    //setWindowProperty("calibration",CV_WND_PROP_FULLSCREEN,CV_WINDOW_FULLSCREEN);
 
     int image_counter = 0;
     int k=0;
@@ -43,11 +46,17 @@ void StereoCalibration::captureCalibImages(VideoInputStereo * stereoInput, Size 
         im_left  = stereoInput->getNextFrame(0); //0
         im_right = stereoInput->getNextFrame(1); //1
 
-        k=waitKey(50);
         showStereo(im_left, im_right);
+        k=waitKey(50);
 
         if (k==27)
         {
+            if( imagelist.size() == 0 )
+            {
+                qDebug() << "test";
+                destroyWindow("calibration");
+                return;
+            }
             calibrate(imagelist, boardSize, squareSize, true, true, true); //2.letzte false
             break;
         }
@@ -76,19 +85,19 @@ void StereoCalibration::showStereo(Mat l, Mat r)
 {
     Mat l1;
     Mat r1;
-    resize(l,l1,Size(0,0),0.25,0.25);
-    resize(r,r1,Size(0,0),0.25,0.25);
+    resize(l,l1,Size(0,0),0.5,0.5);
+    resize(r,r1,Size(0,0),0.5,0.5);
     int res_x = l1.cols;
     int res_y = l1.rows;
 
     // Create 1280x480 mat for window
     cv::Mat win_mat(Size(2*res_x, res_y), CV_8UC3);
 
-    // Copy small images into big mat
-    l1.copyTo(win_mat(Rect(0, 0, res_x, res_y)) );
-    r1.copyTo(win_mat(Rect(res_x, 0, res_x, res_y)) );
+    r1.copyTo(win_mat(Rect(0, 0, res_x, res_y)) );
+    l1.copyTo(win_mat(Rect(res_x, 0, res_x, res_y)) );
+    string str("Push space to capture and ESC to exit");
+    putText(win_mat, str, Point2f(20,100), FONT_HERSHEY_PLAIN, 2,  Scalar(0,0,255,255));
 
-    // Display big mat
     imshow("calibration", win_mat);
 }
 
@@ -151,12 +160,16 @@ void StereoCalibration::saveCalibration(string filename)
 
 void StereoCalibration::calibrate(const vector<string> imagelist, Size boardSize, float squareSize, bool displayCorners, bool useCalibrated, bool showRectified)
 {
+    qDebug() << imagelist.size();
     // even number of images!!
     if( imagelist.size() % 2 != 0 )
     {
         cout << "Error: the image list contains odd (non-even) number of elements\n";
+        destroyWindow("calibration");
         return;
     }
+
+
 
     const int maxScale = 2;
     // ARRAY AND VECTOR STORAGE:
@@ -210,7 +223,9 @@ void StereoCalibration::calibrate(const vector<string> imagelist, Size boardSize
 
 
                 found = findChessboardCorners(timg, boardSize, corners,
-                        CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_NORMALIZE_IMAGE);
+                CV_CALIB_CB_FAST_CHECK | CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_NORMALIZE_IMAGE);
+
+                //found = findCirclesGrid(timg,Size(11,4),corners,CALIB_CB_ASYMMETRIC_GRID);
 
                 if( found )
                 {
@@ -254,12 +269,13 @@ void StereoCalibration::calibrate(const vector<string> imagelist, Size boardSize
             j++;
         }
     }
-    qDebug() << "success";
     cout << j << " pairs have been successfully detected.\n";
     nimages = j;
     if( nimages < 2 )
     {
         cout << "Error: too little pairs to run the calibration\n";
+        destroyWindow("calibration");
+        ready=false;
         return;
     }
 
@@ -441,6 +457,7 @@ void StereoCalibration::calibrate(const vector<string> imagelist, Size boardSize
         else
             for( j = 0; j < canvas.cols; j += 16 )
                 line(canvas, Point(j, 0), Point(j, canvas.rows), Scalar(0, 255, 0), 1, 8);
+        destroyWindow("calibration");
         imshow("rectified", canvas);
     //    char c = (char)waitKey();
     //    if( c == 27 || c == 'q' || c == 'Q' )
@@ -510,11 +527,30 @@ bool StereoCalibration::isReady()
     return ready;
 }
 
+Mat StereoCalibration::getRotationAngleBetweenCameras()
+{
+    // by openCV convention, the x-axis connects both camera origins
+    // We want a coordinate system where x and y are parallel to the ground
+    // so we rotate the coordinate system around the y-axis.
+
+    double a = T.at<double>(0); // translation obtained from calibration
+    double b = T.at<double>(2);
+    double rx = atan(b/a); // rotation angle
+
+    // compute rotation matrix
+    Mat rotCoord = (Mat_<double>(4,4) <<
+                                        cos(rx),        0,          sin(rx),    0,
+                                        0,              1,          0,          0,
+                                        -sin(rx),       0,          cos(rx),    0,
+                                        0,              0,          0,          1);
+    return rotCoord;
+}
+
 Mat StereoCalibration::reconstructPoint3D(Mat p_l, Mat p_r)
 {
     Mat dest_hom(1, 4, CV_32FC4);
     triangulatePoints(PM1, PM2, p_l, p_r, dest_hom);
-    return dest_hom;
+    return RX*dest_hom;
 }
 
 Mat StereoCalibration::getRectifiedIm(Mat img, int camID)

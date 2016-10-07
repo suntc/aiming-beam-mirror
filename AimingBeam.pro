@@ -28,7 +28,8 @@ SOURCES += main.cpp\
     iopath.cpp \
     stereosegmentation.cpp \
     stereocalibration.cpp \
-    videopointgreystereo.cpp
+    videopointgreystereo.cpp \
+    IOTxtData.cpp
 
 
 INCLUDEPATH += "C:\Opt\Boost\include\boost-1_55"
@@ -83,6 +84,7 @@ HEADERS  += mainwindow.h \
     stereosegmentation.h \
     stereocalibration.h \
     videoinputstereo.h \
-    videopointgreystereo.h
+    videopointgreystereo.h \
+    IOTxtData.h
 
 FORMS    += mainwindow.ui

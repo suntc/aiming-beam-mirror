@@ -4,10 +4,14 @@
 #include <fstream>
 #include <string>
 #include <windows.h>
+#include <QDebug>
 
 using namespace std;
 
 std::string IOPath::datapath = "data";
+std::string IOPath::videopath = "videos";
+std::string IOPath::figurepath = "figures";
+std::string IOPath::txtpath = "txt";
 std::string IOPath::counter = "counter.txt";
 
 IOPath::IOPath()
@@ -33,10 +37,26 @@ string IOPath::getAppDir()
     return directory;
 }
 
-string IOPath::getDataOutputFilename(string infix, string suffix)
+string IOPath::getDataOutputFilename(string infix, string suffix, string category)
 {
     string path = getAppDir();
+
     path.append(datapath);
+    if (strcmp(category.c_str(),videopath.c_str())==0)
+    {
+        path.append("\\");
+        path.append(videopath);
+    }
+    if (strcmp(category.c_str(),txtpath.c_str())==0)
+    {
+        path.append("\\");
+        path.append(txtpath);
+    }
+    if (strcmp(category.c_str(),figurepath.c_str())==0)
+    {
+        path.append("\\");
+        path.append(figurepath);
+    }
     path.append("\\");
     path.append(infix);
     path.append(".");
@@ -44,7 +64,7 @@ string IOPath::getDataOutputFilename(string infix, string suffix)
     return path;
 }
 
-string IOPath::getCurrentCounter()
+string IOPath::getandincreaseCurrentCounter()
 {
     string cntfile = getAppDir();
     cntfile.append(counter);
@@ -66,6 +86,28 @@ string IOPath::getCurrentCounter()
     ofstream newFile(cntfile);
     newFile << std::to_string(i_dec+1);
     newFile.close();
+
+    return std::to_string(i_dec+1);
+}
+
+
+string IOPath::getCurrentCounter()
+{
+    string cntfile = getAppDir();
+    cntfile.append(counter);
+    ifstream infile(cntfile); //cntfile
+    string sLine;
+    if (infile.good())
+        getline(infile, sLine);
+    else
+    {
+        ofstream newFile(cntfile);
+        newFile << "1";
+        newFile.close();
+        return 0;
+    }
+
+    infile.close();
 
     return sLine;
 }

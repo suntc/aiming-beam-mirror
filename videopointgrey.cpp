@@ -12,7 +12,7 @@ void PrintError( Error error )
     error.PrintErrorTrace();
 }
 
-
+// ToDo: Identify camera by serial number
 VideoPointGrey::VideoPointGrey()
 {
 

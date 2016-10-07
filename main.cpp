@@ -16,6 +16,8 @@
 #include "threadwrapper.h"
 #include "errorhandler.h"
 #include "laguerredeconvolution.h"
+#include "stereocalibration.h"
+#include "iopath.h"
 
 #define OFFLINE -1
 #define STANDBY 0
@@ -101,7 +103,9 @@ void startup(GUIupdater *ui)
     ui->setMode(mode);
 
     // initialize image acquisition object (this is for the exvivo camera only. may need to be changed in the future)
-    imageAcquisition *acq = new imageAcquisition();
+    imageAcquisition *acq = new imageAcquisition(stereomode);
+    StereoCalibration *calib;
+
     while (!acq->ready)
     {
         ui->throwError("Camera not detected");
@@ -117,6 +121,8 @@ void startup(GUIupdater *ui)
 
         // reconnect to camera
         acq->startupCamera(channel, threshold);
+
+
 
     }
 
@@ -429,6 +435,10 @@ void startup(GUIupdater *ui)
 
                 //acknowledge
                 conn.write(set_ack(key, value));
+
+                // toggle modes
+                acq->set_mode(stereomode);
+
             }
 
             // start 3d calibration
@@ -438,6 +448,24 @@ void startup(GUIupdater *ui)
 
                 // acknowledge command
                 conn.write(set_ack(key, "1"));
+                //if (calib != nullptr)
+                //    delete(calib);
+
+                acq->set_mode(true);
+                calib = new StereoCalibration(acq->stereo_cam, Size(9,6), 0.25); //0.5
+                if (calib->isReady())
+                {
+                    string filename = IOPath::getAppDir();
+                    filename.append("Calibration\\stereocalibration");
+                    string counter = IOPath::getandincreaseCurrentCounter();
+                    filename.append(counter);
+                    filename.append(".yml");
+                    qDebug() << filename.c_str();
+
+                    calib->saveCalibration(filename);
+                }
+                else
+                    qDebug() << "not ready";
             }
 
             // query mode
@@ -560,6 +588,9 @@ void startup(GUIupdater *ui)
                 init = false;
 
             }
+
+            //if(stereomode==true && acq->stereomode==false)
+            //    acq->set_mode(true);
 
             // set acquisition loop condition
             acq->inAcquisition = acquire;   // differentiate between focusing and acquisition

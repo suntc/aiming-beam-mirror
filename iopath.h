@@ -8,10 +8,14 @@ class IOPath
 public:
     IOPath();
     static std::string getAppDir();
-    static std::string getDataOutputFilename(std::string infix, std::string suffix);
+    static std::string getDataOutputFilename(std::string infix, std::string suffix, std::string category);
+    static std::string getandincreaseCurrentCounter();
     static std::string getCurrentCounter();
 private:
     static std::string datapath;
+    static std::string videopath;
+    static std::string txtpath;
+    static std::string figurepath;
     static std::string counter;
 
 };

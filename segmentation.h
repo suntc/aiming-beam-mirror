@@ -3,14 +3,19 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include "overlay.h"
+#include "aimingbeam_segmentation.h"
 
 class Segmentation
 {
 
 public:
-    Segmentation(cv::Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ, bool stero);
-    ~Segmentation();
+    Segmentation(cv::Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ);
+    Segmentation(cv::Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ, StereoCalibration * calib);
+    //~Segmentation();
+
     void startSegmentation(cv::Mat frame, double lt_ch1, double lt_ch2, double lt_ch3, double lt_ch4);
+    void setThreshold(double thres);
+    void switchChannel(int channel);
 
     int last_radius;
     vector<int> log_coords_x;
@@ -22,10 +27,13 @@ public:
     Overlay* ch4_overlay;
     Overlay* overlay=0;
 
+    long frame_no=0;
+
     vector<double> log_lt_ch1;
     vector<double> log_lt_ch2;
     vector<double> log_lt_ch3;
     vector<double> log_lt_ch4;
+    vector<double> log_frame_no;
 
     cv::Mat firstFrame;
 
@@ -38,10 +46,14 @@ public:
     cv::Mat* createFilter(int sigma);
     float correlateGaussian(cv::Mat frame, int &x, int &y, int &radius);
     float simpleThreshold(cv::Mat frame, int &x, int &y, int &radius);
+    float doubleRingSegmentation(cv::Mat frame, int &x, int &y, int &radius);
     int res_x;
     int res_y;
 private:
    // const static int* radius_values; // only even!!
+
+    void init(cv::Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ);
+
     bool firstFrameSet = false;
 
 
@@ -81,6 +93,8 @@ private:
     int struct_size2;       // Size of structured element is 1
 
     cv::Mat* gaussians[no_gaussians];
+
+    StereoCalibration * calib;
 };
 
 #endif // SEGMENTATION_H

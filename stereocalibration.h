@@ -23,6 +23,7 @@ public:
     cv::Mat H1, H2;
     cv::Mat getProjectionMatrix(int ind);
     cv::Point2d getRectifiedPoint(cv::Point2d p, int camID);
+    cv::Mat getRotationAngleBetweenCameras();
     //void on_opengl(cv::Mat pts);
     void showStereo(cv::Mat l, cv::Mat r);
 
@@ -41,6 +42,8 @@ private:
     cv::Mat map_y0;
     cv::Mat map_x1;
     cv::Mat map_y1;
+
+    cv::Mat RX;
 
     cv::Rect valid0;
     cv::Rect valid1;

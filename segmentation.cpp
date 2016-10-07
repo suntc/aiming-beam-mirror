@@ -10,18 +10,69 @@
 #include <algorithm>
 #include <iostream>
 #include <QMessageBox>
+#include "stereocalibration.h"
 
 
 using namespace cv;
 using namespace std;
 
-Segmentation::~Segmentation()
+Segmentation::Segmentation(Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ, StereoCalibration* calib)
 {
+    qDebug() << "overlay stereo";
+    Size s = frame.size();
+    res_x = s.width;
+    res_y = s.height;
+    //ch1_overlay = new Overlay(res_x,res_y,2,3);
+    //ch2_overlay = new Overlay(res_x,res_y,2,3);
+    //ch3_overlay = new Overlay(res_x,res_y,2,3);
+    //ch4_overlay = new Overlay(res_x,res_y,2,3);
+    stereo_setup = true;
+    this->calib = calib;
+    init(frame, point1, point2, interp, ch_number, interp_succ);
 }
 
-Segmentation::Segmentation(Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ, bool stereo)
+Segmentation::Segmentation(Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ)
 {
+    qDebug() << "overlay mono";
+    Size s = frame.size();
+    res_x = s.width;
+    res_y = s.height;
+    ch1_overlay = new Overlay(res_x,res_y,2,3);
+    ch2_overlay = new Overlay(res_x,res_y,2,3);
+    ch3_overlay = new Overlay(res_x,res_y,2,3);
+    ch4_overlay = new Overlay(res_x,res_y,2,3);
+    stereo_setup = false;
 
+    // the pointer overlay points to the overlay that is currently displayed
+    switchChannel(ch_number);
+
+    init(frame, point1, point2, interp, ch_number, interp_succ);
+}
+
+void Segmentation::switchChannel(int channel)
+{
+    switch(channel) {
+        case 1:
+        overlay=ch1_overlay;
+        break;
+
+        case 2:
+        overlay=ch2_overlay;
+        break;
+
+        case 3:
+        overlay=ch3_overlay;
+        break;
+
+        case 4:
+        overlay=ch4_overlay;
+        break;
+    }
+}
+
+
+void Segmentation::init(Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ)
+{
     // Set up Gaussian functions for invivo segmentation
     radius_values = new int[14]; //14
     int c=0;
@@ -45,11 +96,12 @@ Segmentation::Segmentation(Mat frame, cv::Point point1, cv::Point point2, bool i
     current_channel = ch_number;
 
     // Set up resolution
-    Size s = frame.size();
-    res_x = s.width;
-    res_y = s.height;
+    //Size s = frame.size();
+    //res_x = s.width;
+    //res_y = s.height;
     last_x = res_x/2;
     last_y = res_y/2;
+
 
     // Set up ROI
     if (point1.x!=point2.x && point1.y!=point2.y)
@@ -107,42 +159,20 @@ Segmentation::Segmentation(Mat frame, cv::Point point1, cv::Point point2, bool i
     // for exvivo samples: extract first frame to segment only changes
     subtract_first_frame = false; //false;
 
-    // stereo input for surface reconstruction?
-    stereo_setup = stereo;
-
+    // adapt morphological filters to current resolution
     int factor = round( res_y / 372 );
     struct_size1 = factor * 3; // 3 at standard resolution
-    struct_size2 = factor * 1; // 1 at standard resolution
+    struct_size2 = factor * 2; // 1 at standard resolution
 
     // initialize the overlays of all four channels
-    ch1_overlay = new Overlay(res_x,res_y,2,3);
-    ch2_overlay = new Overlay(res_x,res_y,2,3);
-    ch3_overlay = new Overlay(res_x,res_y,2,3);
-    ch4_overlay = new Overlay(res_x,res_y,2,3);
 
-    // the pointer overlay points to the overlay that is currently displayed
-    switch(ch_number) {
-        case 1:
-        overlay=ch1_overlay;
-        break;
 
-        case 2:
-        overlay=ch2_overlay;
-        break;
-
-        case 3:
-        overlay=ch3_overlay;
-        break;
-
-        case 4:
-        overlay=ch4_overlay;
-        break;
-    }
 
 }
 
 void Segmentation::startSegmentation(Mat frame, double lt_ch1, double lt_ch2, double lt_ch3, double lt_ch4)
 {
+
     if (!firstFrameSet)
     {
         firstFrame = frame.clone();
@@ -166,10 +196,8 @@ void Segmentation::startSegmentation(Mat frame, double lt_ch1, double lt_ch2, do
         break;
     }
 
-    log_lt_ch1.push_back(lt_ch1);
-    log_lt_ch2.push_back(lt_ch2);
-    log_lt_ch3.push_back(lt_ch3);
-    log_lt_ch4.push_back(lt_ch4);
+    frame_no++;
+
 
     Mat frame_diff = frame.clone();
     if (subtract_first_frame)
@@ -185,42 +213,51 @@ void Segmentation::startSegmentation(Mat frame, double lt_ch1, double lt_ch2, do
 
     //    overlay = new Overlay(res_x,res_y,lower_lim,ceil(lifetime+0.5)); //1-8
     //}
-    if (lt_ch1>0)
+    if(!stereo_setup)
     {
-        if (lt_ch1>ch1_overlay->getUpperBound())
-            ch1_overlay->setNewInterval(ch1_overlay->getLowerBound(),ceil(lt_ch1));
+        if (lt_ch1>0)
+        {
+            if (lt_ch1>ch1_overlay->getUpperBound())
+                ch1_overlay->setNewInterval(ch1_overlay->getLowerBound(),ceil(lt_ch1));
 
-        if (lt_ch1<ch1_overlay->getLowerBound() && lt_ch1>0)
-            ch1_overlay->setNewInterval(floor(lt_ch1),ch1_overlay->getUpperBound());
-    }
-    if (lt_ch2>0)
-    {
-        if (lt_ch2>ch2_overlay->getUpperBound())
-            ch2_overlay->setNewInterval(ch2_overlay->getLowerBound(),ceil(lt_ch2));
+            if (lt_ch1<ch1_overlay->getLowerBound() && lt_ch1>0)
+                ch1_overlay->setNewInterval(floor(lt_ch1),ch1_overlay->getUpperBound());
+        }
+        if (lt_ch2>0)
+        {
+            if (lt_ch2>ch2_overlay->getUpperBound())
+                ch2_overlay->setNewInterval(ch2_overlay->getLowerBound(),ceil(lt_ch2));
 
-        if (lt_ch2<ch2_overlay->getLowerBound() && lt_ch2>0)
-            ch2_overlay->setNewInterval(floor(lt_ch2),ch2_overlay->getUpperBound());
-    }
-    if (lt_ch3>0)
-    {
-        if (lt_ch3>ch3_overlay->getUpperBound())
-            ch3_overlay->setNewInterval(ch3_overlay->getLowerBound(),ceil(lt_ch3));
+            if (lt_ch2<ch2_overlay->getLowerBound() && lt_ch2>0)
+                ch2_overlay->setNewInterval(floor(lt_ch2),ch2_overlay->getUpperBound());
+        }
+        if (lt_ch3>0)
+        {
+            if (lt_ch3>ch3_overlay->getUpperBound())
+                ch3_overlay->setNewInterval(ch3_overlay->getLowerBound(),ceil(lt_ch3));
 
-        if (lt_ch3<ch3_overlay->getLowerBound() && lt_ch3>0)
-            ch3_overlay->setNewInterval(floor(lt_ch3),ch3_overlay->getUpperBound());
-    }
-    if (lt_ch4>0)
-    {
-        if (lt_ch4>ch4_overlay->getUpperBound())
-            ch4_overlay->setNewInterval(ch4_overlay->getLowerBound(),ceil(lt_ch4));
+            if (lt_ch3<ch3_overlay->getLowerBound() && lt_ch3>0)
+                ch3_overlay->setNewInterval(floor(lt_ch3),ch3_overlay->getUpperBound());
+        }
+        if (lt_ch4>0)
+        {
+            if (lt_ch4>ch4_overlay->getUpperBound())
+                ch4_overlay->setNewInterval(ch4_overlay->getLowerBound(),ceil(lt_ch4));
 
-        if (lt_ch4<ch4_overlay->getLowerBound() && lt_ch4>0)
-            ch4_overlay->setNewInterval(floor(lt_ch4),ch4_overlay->getUpperBound());
+            if (lt_ch4<ch4_overlay->getLowerBound() && lt_ch4>0)
+                ch4_overlay->setNewInterval(floor(lt_ch4),ch4_overlay->getUpperBound());
+        }
     }
     //Size s = frame.size();
     //res_x = s.width;
     //res_y = s.height;
 
+    log_lt_ch1.push_back(lt_ch1);
+    log_lt_ch2.push_back(lt_ch2);
+    log_lt_ch3.push_back(lt_ch3);
+    log_lt_ch4.push_back(lt_ch4);
+
+    log_frame_no.push_back(frame_no);
     int x, y, radius;
     float correlation;
     if (segmentation_method==1)
@@ -286,9 +323,10 @@ void Segmentation::startSegmentation(Mat frame, double lt_ch1, double lt_ch2, do
             int xto   = (last_x+area_dim > ROI_right_lower.x) ? ROI_right_lower.x : last_x+area_dim;
             int yto   = (last_y+area_dim > ROI_right_lower.y) ? ROI_right_lower.y : last_y+area_dim;
             Rect corrArea(xfrom, yfrom, xto-xfrom, yto-yfrom);
+
             Mat frame_cut = frame_diff(corrArea);
 
-            correlation = simpleThreshold(frame_cut, x, y, radius);
+            correlation = doubleRingSegmentation(frame_cut, x, y, radius);
 
             int x_n=last_x; int y_n=last_y;
             if (correlation > thres)
@@ -318,7 +356,8 @@ void Segmentation::startSegmentation(Mat frame, double lt_ch1, double lt_ch2, do
                 int rad_new = (int) (log_radius_failed  +( (float) (loop_counter*dr)/(float) no_int_points ));
                 loop_counter++;
 
-                overlay->drawCircle(x_new,y_new,rad_new*0.5,*it);
+                if (!stereo_setup)
+                    overlay->drawCircle(x_new,y_new,rad_new*0.5,*it);
 
             }
             log_lifetime_failed.clear();
@@ -357,22 +396,39 @@ void Segmentation::startSegmentation(Mat frame, double lt_ch1, double lt_ch2, do
                 double lt_new3 =    (last_lt_ch3+(  (float) (loop_counter*dlt3)/(float) num_of_int_steps ));
                 double lt_new4 =    (last_lt_ch4+(  (float) (loop_counter*dlt4)/(float) num_of_int_steps ));
                 loop_counter++;
-                ch1_overlay->drawCircle(x_new,y_new,rad_new*0.5,lt_new1);
-                ch2_overlay->drawCircle(x_new,y_new,rad_new*0.5,lt_new2);
-                ch3_overlay->drawCircle(x_new,y_new,rad_new*0.5,lt_new3);
-                ch4_overlay->drawCircle(x_new,y_new,rad_new*0.5,lt_new4);
+                if (!stereo_setup)
+                {
+                    ch1_overlay->drawCircle(x_new,y_new,rad_new*0.5,lt_new1);
+                    ch2_overlay->drawCircle(x_new,y_new,rad_new*0.5,lt_new2);
+                    ch3_overlay->drawCircle(x_new,y_new,rad_new*0.5,lt_new3);
+                    ch4_overlay->drawCircle(x_new,y_new,rad_new*0.5,lt_new4);
+                }
             }
         }
-
-        ch1_overlay->drawCircle(x,y,radius*0.5,lt_ch1);
-        ch2_overlay->drawCircle(x,y,radius*0.5,lt_ch2);
-        ch3_overlay->drawCircle(x,y,radius*0.5,lt_ch3);
-        ch4_overlay->drawCircle(x,y,radius*0.5,lt_ch4);
+        if (!stereo_setup)
+        {
+            ch1_overlay->drawCircle(x,y,radius*0.5,lt_ch1);
+            ch2_overlay->drawCircle(x,y,radius*0.5,lt_ch2);
+            ch3_overlay->drawCircle(x,y,radius*0.5,lt_ch3);
+            ch4_overlay->drawCircle(x,y,radius*0.5,lt_ch4);
+        }
 
         putText(frame, str, Point2f(100,100), FONT_HERSHEY_PLAIN, 2,  Scalar(255,0,0,255));
 
-        log_coords_x.push_back(x);
-        log_coords_y.push_back(y);
+        //if(stereo_setup==true)
+        //{
+        //    Point beam_pos(x,y);
+        //    beam_pos = calib->getRectifiedPoint(beam_pos,0);
+        //    log_coords_x.push_back(beam_pos.x);
+       //     log_coords_y.push_back(beam_pos.y);
+        //}
+        //else
+        //{
+            log_coords_x.push_back(x);
+            log_coords_y.push_back(y);
+        //}
+
+
         log_radius.push_back(radius);
         last_found = 1;
         last_x = x;
@@ -400,9 +456,12 @@ void Segmentation::startSegmentation(Mat frame, double lt_ch1, double lt_ch2, do
         log_coords_y.push_back(0);
         log_radius.push_back(0);
 
+
+
         putText(frame, str, Point2f(100,100), FONT_HERSHEY_PLAIN, 2,  Scalar(0,0,255,255));
         last_active=false;
     }
+
 
 
     //imshow("activeDisplay", frame);
@@ -411,7 +470,6 @@ void Segmentation::startSegmentation(Mat frame, double lt_ch1, double lt_ch2, do
 
     float alpha = 0.5;
     float beta = 0.5;
-
     if (!stereo_setup)
         addWeighted( frame, alpha, overlay->mergeOverlay(frame), beta, 0.0, frame);
 
@@ -448,14 +506,21 @@ float Segmentation::simpleThreshold(cv::Mat frame, int &x, int &y, int &radius)
     //y = 0;
     radius = 10;
 
-    //const char * filename1 = "test.jpg";
-    //cvSaveImage(filename1, &(IplImage(frameBlueOCL)));
+    const char * filename1 = "test1.jpg";
+    cvSaveImage(filename1, &(IplImage(frameBlueOCL)));
 
     int struct_type = MORPH_ELLIPSE;    // Structured element type is ellipse
 
     Mat element0 = getStructuringElement(struct_type, Size(2*struct_size2 + 1, 2*struct_size2 + 1),Point(-1, -1)); // Create structured element of size 1
     Mat element = getStructuringElement(struct_type, Size(2*struct_size1 + 1, 2*struct_size1 + 1),Point(-1, -1)); // Creat structured element of size 3
     morphologyEx(frameBlueOCL, frameBlueOCL, MORPH_DILATE, element0); // Dilation with structured element of size 1
+
+    Mat im_floodfill = frameBlueOCL.clone();
+    floodFill(im_floodfill,Point(0,0),Scalar(255));
+    bitwise_not(im_floodfill,im_floodfill);
+    frameBlueOCL = (frameBlueOCL | im_floodfill);
+
+
     morphologyEx(frameBlueOCL, frameBlueOCL, MORPH_ERODE, element); // Erosion with structured element of size 3
     morphologyEx(frameBlueOCL, frameBlueOCL, MORPH_DILATE, element); // Dilation with structured element of size 3
     morphologyEx(frameBlueOCL, frameBlueOCL, MORPH_ERODE, element0); // Erosion with structured element of size 1
@@ -464,6 +529,10 @@ float Segmentation::simpleThreshold(cv::Mat frame, int &x, int &y, int &radius)
     vector<vector<Point> > contours;
     vector<Vec4i> hierarchy;
 
+
+
+    const char * filename2 = "test2.jpg";
+    cvSaveImage(filename2, &(IplImage(frameBlueOCL)));
 
 
 
@@ -478,8 +547,7 @@ float Segmentation::simpleThreshold(cv::Mat frame, int &x, int &y, int &radius)
 
     //qDebug() << contours.size();
 
-    //const char * filename1 = "test.jpg";
-    //cvSaveImage(filename1, &(IplImage(frameBlueOCL)));
+
 
     vector<RotatedRect> minEllipse(contours.size()); // Create ellipses vector
     for(int i = 0; i < (int)contours.size(); i++) // For all the contours
@@ -808,4 +876,188 @@ double Segmentation::getRadius(double cr[], int x[], int y[], int arrLength, int
     x_out = (int) (x0[idx] / (double) nums[idx]);
     y_out = (int) (y0[idx] / (double) nums[idx]);
     return mmx; //8.0;
+}
+
+void Segmentation::setThreshold(double thres)
+{
+    this->thres = thres;
+}
+
+float Segmentation::doubleRingSegmentation(cv::Mat frame, int &x, int &y, int &radius)
+{
+    // convert to HSV color space
+    Mat frame_hsv;
+    cvtColor(frame, frame_hsv, CV_BGR2HSV);
+
+    // thresholds for inner ring
+    int hue_min = 0; //0; //0;  // Hue min
+    int hue_max = 255; //255; //255; // Hue max
+    int sat_min = 0;//0;  // Saturation min
+    int sat_max = 255;//10; // Saturation max
+    int val_min = 200; //0;  // Value min
+    int val_max = 255; //255; // Value max
+
+    // thresholds for outer ring
+    int hue_min_border = 100; //85;  // Hue min
+    int hue_max_border = 160; //120; // Hue max
+    int sat_min_border = 0;  // Saturation min
+    int sat_max_border = 255; // Saturation max
+    int val_min_border = 0;  // Value min
+    int val_max_border = 255; // Value max
+
+    // segment candidates for inner ring
+    Mat frameBlueOCL;
+    inRange(frame_hsv, Scalar(hue_min, sat_min, val_min), Scalar(hue_max, sat_max, val_max), frameBlueOCL); // HSV thresholding
+    radius = 10;
+
+    // morphologic erosion and dilation to get a closed contour
+    int struct_type = MORPH_ELLIPSE;    // Structured element type is ellipse
+
+    Mat element0 = getStructuringElement(struct_type, Size(2*struct_size2 + 1, 2*struct_size2 + 1),Point(-1, -1)); // Create structured element of size 1
+    Mat element = getStructuringElement(struct_type, Size(2*struct_size1 + 1, 2*struct_size1 + 1),Point(-1, -1)); // Creat structured element of size 3
+    morphologyEx(frameBlueOCL, frameBlueOCL, MORPH_DILATE, element0); // Dilation with structured element of size 1
+    morphologyEx(frameBlueOCL, frameBlueOCL, MORPH_ERODE, element); // Erosion with structured element of size 3
+    morphologyEx(frameBlueOCL, frameBlueOCL, MORPH_DILATE, element); // Dilation with structured element of size 3
+    morphologyEx(frameBlueOCL, frameBlueOCL, MORPH_ERODE, element0); // Erosion with structured element of size 1
+
+    // extract candidates
+    vector<vector<Point> > contours;
+    vector<Vec4i> hierarchy;
+    findContours(frameBlueOCL, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
+
+    if (contours.size()==0)
+        return 0;
+
+    Mat out = Mat::zeros(frame.rows, frame.cols, CV_8UC1);
+    Mat out2 = Mat::zeros(frame.rows, frame.cols, CV_8UC1);
+
+    // go through all candidates
+    vector<int> beam_sizes;
+    for(int i = 0; i < (int)contours.size(); i++) // For all the contours
+    {
+        int contourSize = contourArea(contours[i], false);
+        drawContours(out,contours,i,Scalar( 255),CV_FILLED);
+        Mat border;
+
+        // extract outer ring
+        morphologyEx(out, out2, MORPH_DILATE, element0);
+        bitwise_xor(out,out2,out2);
+
+        Mat beam_borders;
+        inRange(frame_hsv, Scalar(hue_min_border, sat_min_border, val_min_border), Scalar(hue_max_border, sat_max_border, val_max_border), beam_borders);
+
+        Mat border_criteria;
+        bitwise_and(out2,beam_borders,beam_borders);
+
+        vector<Point> area1;
+        vector<Point> area2;
+        findNonZero(out2,area1);
+        findNonZero(beam_borders,area2);
+
+        double a = area1.size();
+        double b = area2.size();
+        double beam_criteria = b/a;
+
+        // the outer ring has a dominant blue shimmer
+        if (beam_criteria<0.58)
+        {
+            // if not delete candidate
+            contourSize=0;
+        }
+        beam_sizes.push_back(contourSize);
+    }
+    // from the remaining candidates take the biggest one
+    double mx_size = *max_element(beam_sizes.begin(), beam_sizes.end());
+    int maxPos = distance(beam_sizes.begin(), max_element(beam_sizes.begin(), beam_sizes.end()));
+
+    if (mx_size<5)
+            return 0;
+
+    // fit ellipse
+    RotatedRect fittedEllipse = fitEllipse(Mat(contours[maxPos]));
+
+    if ((beam_sizes[maxPos] < 10000)) //100 //|| (dataold.at<double>(0, 0) == round(frameOnline.cols / 2))) // If current Euclidean distance is smaller than 100 pixels or the previous ellipse's center x coordinate is at the center of the image
+    {
+        // Fit Gaussian
+        double PI = 3.14159265;
+        double lineangle = tan((90 + fittedEllipse.angle) * PI / 180.0); // Find the angle of the major axis
+
+        // Create the line that is on the major axis and equal twice of its length (see paper for more details)
+        double x1 = fittedEllipse.center.x + ((fittedEllipse.size.height) / sqrt((lineangle * lineangle) + 1));
+        double x2 = fittedEllipse.center.x - ((fittedEllipse.size.height) / sqrt((lineangle * lineangle) + 1));
+        double y1 = fittedEllipse.center.y + ((lineangle * (fittedEllipse.size.height)) / sqrt((lineangle * lineangle) + 1));
+        double y2 = fittedEllipse.center.y - ((lineangle * (fittedEllipse.size.height)) / sqrt((lineangle * lineangle) + 1));
+
+        // Get the blue channel values of the RGB image that fall on the line and create the linear model (see paper for more)
+        LineIterator it(frame, Point (x1, y1), Point (x2, y2), 8);
+        Mat I_val(Mat_<double>(it.count, 1));
+        Mat x_val(Mat_<double>(it.count, 3));
+
+        if (x1==0 || x2==0 || y1==0 || y2==0)
+        {
+            return 0;
+        }
+        for(int i = 0; i < it.count; i++, ++it)
+        {
+            Vec3b val = frame.at<Vec3b>(it.pos());
+            x_val.at<double>(i, 0) = (double)i * (double)i;
+            x_val.at<double>(i, 1) = (double)i;
+            x_val.at<double>(i, 2) = 1.0;
+            I_val.at<double>(i, 0) = (double)val[0];
+        }
+        double minVal;
+        double maxVal;
+        minMaxIdx(I_val, &minVal, &maxVal);
+        subtract(I_val, (minVal - 1), I_val);
+        if (it.count<=1)
+            return 0;
+        I_val.at<double>(0, 0) = 1;
+        I_val.at<double>((it.count - 1), 0) = 1;
+
+        log(I_val, I_val);
+        Mat I_out;
+
+        // Solve the linear model to fit the Gaussian (see paper for more)
+        solve(x_val, I_val, I_out, DECOMP_SVD);
+
+        // Scale Ellipse
+        double sigma = abs(sqrt(- 1.0 / (2.0 * I_out.at<double>(0, 0)))); // Estimate the Gaussian sigma value
+        double FWHM = 2.0 * sigma * sqrt(- 2.0 * log(0.5)); // Estimate FWHM from sigma value (see paper for equations and more)
+        double FW075M = 2.0 * sigma * sqrt(- 2.0 * log(0.75)); // Estimate FW075M from sigma value
+        double FW09M = 2.0 * sigma * sqrt(- 2.0 * log(0.9)); // Estimate FW09M from sigma value
+
+        // Scale accordingly the minor axis of the ellipse
+        double scaleVal_FWHM = fittedEllipse.size.width / (fittedEllipse.size.height / FWHM);
+        double scaleVal_FW09M = fittedEllipse.size.width / (fittedEllipse.size.height / FW09M);
+        double scaleVal_FW075M = fittedEllipse.size.width / (fittedEllipse.size.height / FW075M);
+
+        if (!isnan(FWHM)) // If the FWHM is a finite value (Gaussian fit was successful)
+        {
+            fittedEllipse.size.height = FW075M; // Update ellipse's height
+            fittedEllipse.size.width = scaleVal_FW075M; // Update ellipse's width
+        }
+        else // If the FWHM does not have a finite value (Gaussian fit failed)
+        {
+            fittedEllipse.size.height = fittedEllipse.size.height / 3; // Scale ellipse's height to 1/3
+            fittedEllipse.size.width = fittedEllipse.size.width / 3; // Scale ellipse's width to 1/3
+
+            // Update widths
+            FWHM = fittedEllipse.size.height / 3;
+            FW075M = fittedEllipse.size.height / 3;
+            FW09M = fittedEllipse.size.height / 3;
+        }
+    }
+    else
+    {
+        return 0;
+    }
+    radius = ( fittedEllipse.size.height+fittedEllipse.size.width ) / 4;
+    x = fittedEllipse.center.x;
+    y = fittedEllipse.center.y;
+
+    if (x==0 || y==0)
+    {
+        return 0;
+    }
+    return 1;
 }

@@ -3,6 +3,7 @@
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include "stereocalibration.h"
 
 
 using namespace std;
@@ -11,6 +12,7 @@ class Overlay
 {
 public:
     Overlay(int res_x, int res_y, double scale_mn, double scale_mx);
+    Overlay(int res_x, int res_y, double scale_mn, double scale_mx, StereoCalibration * calib);
     void drawCircle(int x, int y, int radius, double val);
     cv::Mat getOverlay();
     cv::Mat getAccumulator();
@@ -18,11 +20,14 @@ public:
     double getLowerBound();
     double getUpperBound();
     void setNewInterval(double mn, double mx);
-    void Overlay::drawColorBar();
+    void drawColorBar();
     cv::Mat values;
     cv::Mat mergeOverlay(cv::Mat frame);
-private:
+    double getValue(int x, int y);
+    bool stereo_mode;
 
+private:
+    void init(int size_x, int size_y, double scale_mn, double scale_mx);
     cv::Mat accumulator;
     cv::Mat color_bar;
     cv::Mat readColorMap(string dataPath);
@@ -35,6 +40,7 @@ private:
     cv::Mat RGBimage;
     char str_mx1[4];
     char str_mn1[4];
-};
 
+    StereoCalibration * calib;
+};
 #endif // OVERLAY_H
