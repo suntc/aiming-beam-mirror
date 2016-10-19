@@ -47,7 +47,7 @@ void imageAcquisition::startAcquisition()
     if (!stereomode)
     {
         frame = cam->getNextFrame();
-        qDebug() << "invoke mono";
+        //qDebug() << "invoke mono";
         //seg = new Segmentation(frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false);
     }
     else
@@ -55,7 +55,7 @@ void imageAcquisition::startAcquisition()
         // to be changed XXX
         frame = stereo_cam->getNextFrame(0);
         //calib = new StereoCalibration("C:/Aiming Beam v2/Source/Calibration/stereo_calibration.yml");
-        qDebug() << "invoke stereo";
+        //qDebug() << "invoke stereo";
         //seg_stereo  = new StereoSegmentation(calib, frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false);
     }
 
@@ -121,6 +121,7 @@ void imageAcquisition::startAcquisition()
             // if in acquisition, do segmentation
             if (inAcquisition)
             {
+
                 // add raw frame to avi export
                 avi_out_raw->addFrame(frame);
                 boost::thread* segmentationThread;
@@ -128,18 +129,24 @@ void imageAcquisition::startAcquisition()
 
                 if (!stereomode)
                 {
+                    // set correlation threshold
                     seg->setThreshold(threshold);
+                    // detection channel to be displayed
+                    seg->switchChannel(channel);
                     //boost::thread segmentationThread(ThreadWrapper::startSegmentationThread, seg, frame, ch1_tau, ch2_tau, ch3_tau, ch4_tau);
                     //segmentationThread = new boost::thread;
                     segmentationThread = new boost::thread(boost::bind(ThreadWrapper::startSegmentationThread, seg, frame, ch1_tau, ch2_tau, ch3_tau, ch4_tau));
+
                     // wait for thread to end
 
 
                 }
                 else
                 {
-
+                    // set correlation threshold
                     seg_stereo->setThreshold(threshold);
+                    // detection channel to be displayed
+                    seg_stereo->switchChannel(channel);
                     //boost::thread segmentationThread(ThreadWrapper::startStereoSegmentationThread, seg_stereo, frame_l, frame_r, frame, ch1_tau, ch2_tau, ch3_tau, ch4_tau);
                     segmentationThread = new boost::thread(boost::bind(ThreadWrapper::startStereoSegmentationThread, seg_stereo, frame_l, frame_r, frame, ch1_tau, ch2_tau, ch3_tau, ch4_tau));
                     // wait for thread to end
@@ -165,9 +172,6 @@ void imageAcquisition::startAcquisition()
             {
 
                 destroyWindow("Acquisition");
-
-
-
 
                 init_output=false;
 
@@ -226,7 +230,7 @@ void imageAcquisition::startAcquisition()
     // cleanup
 
     // need to handle this properly for manual focussing
-    if (true)
+    if (true && avi_out_augmented && avi_out_raw)
     {
         avi_out_augmented->closeFile();
         delete(avi_out_augmented);
@@ -234,7 +238,6 @@ void imageAcquisition::startAcquisition()
         delete(avi_out_raw);
 
     }
-
 
     if (!stereomode)
     {
@@ -249,7 +252,6 @@ void imageAcquisition::startAcquisition()
         delete(stereo_cam);
         delete(seg_stereo);
     }
-
 
 
 }

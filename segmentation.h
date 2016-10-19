@@ -47,15 +47,17 @@ public:
     float correlateGaussian(cv::Mat frame, int &x, int &y, int &radius);
     float simpleThreshold(cv::Mat frame, int &x, int &y, int &radius);
     float doubleRingSegmentation(cv::Mat frame, int &x, int &y, int &radius);
+    float pulsedSegmentation(cv::Mat frame, int &x, int &y, int &radius);
     int res_x;
     int res_y;
+
+    vector<cv::Mat> frames;
 private:
    // const static int* radius_values; // only even!!
 
     void init(cv::Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ);
 
     bool firstFrameSet = false;
-
 
     int *radius_values;
     static const int no_gaussians = 11; // 14;
@@ -91,6 +93,9 @@ private:
 
     int struct_size1;       // Size of structured element is 3
     int struct_size2;       // Size of structured element is 1
+
+    cv::Mat frame1;
+    cv::Mat frame2;
 
     cv::Mat* gaussians[no_gaussians];
 

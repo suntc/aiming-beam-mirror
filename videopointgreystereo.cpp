@@ -92,8 +92,8 @@ VideoPointGreyStereo::VideoPointGreyStereo()
     //                exit(-1);
     //            }
 
-    cam1.SetVideoModeAndFrameRate(FlyCapture2::VIDEOMODE_1280x960RGB, FlyCapture2::FRAMERATE_60 );
-    cam2.SetVideoModeAndFrameRate(FlyCapture2::VIDEOMODE_1280x960RGB, FlyCapture2::FRAMERATE_60 );
+    cam1.SetVideoModeAndFrameRate(FlyCapture2::VIDEOMODE_1280x960RGB, FlyCapture2::FRAMERATE_30 );
+    cam2.SetVideoModeAndFrameRate(FlyCapture2::VIDEOMODE_1280x960RGB, FlyCapture2::FRAMERATE_30 );
     connected = true;
 }
 

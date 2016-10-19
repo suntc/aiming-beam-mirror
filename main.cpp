@@ -327,6 +327,9 @@ void startup(GUIupdater *ui)
                 acquire = (value.compare("1") == 0) ? true : false;
                 conn.write(set_ack(key, value));
 
+                // let user know that acquisition has started
+                Beep(1200, 1000); // 1.2kHz, 1s
+
             }
 
             // automatic lifetime boundaries
@@ -460,7 +463,7 @@ void startup(GUIupdater *ui)
                     string counter = IOPath::getandincreaseCurrentCounter();
                     filename.append(counter);
                     filename.append(".yml");
-                    qDebug() << filename.c_str();
+                    //qDebug() << filename.c_str();
 
                     calib->saveCalibration(filename);
                 }
@@ -556,7 +559,6 @@ void startup(GUIupdater *ui)
             else if (key.compare("!idx") == 0)
             {
                 idx = stoi(value);
-                //qDebug() << idx;
                 conn.write(set_ack(key, value));
             }
 
@@ -624,7 +626,7 @@ void startup(GUIupdater *ui)
         AcquisitionThread.detach();
 
     } else {
-        qDebug() << "Connection not OK";
+        ui->throwError("Connection not OK");
     }
 
     // restart the application instead of having a recursive function. this clears up memory as well
@@ -646,6 +648,9 @@ int main(int argc, char *argv[])
     w.ready(false);
     w.error(false);
     w.init();
+
+
+
 
     // make things working
     // send updater as argument of the thread in order to be able to update the UI from within the thread

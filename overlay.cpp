@@ -12,14 +12,14 @@ using namespace std;
 
 Overlay::Overlay(int size_x, int size_y, double scale_mn, double scale_mx)
 {
-    qDebug() << "overlay mono";
+    //qDebug() << "overlay mono";
     this->stereo_mode = false;
     init(size_x, size_y, scale_mn, scale_mx);
 }
 
 Overlay::Overlay(int size_x, int size_y, double scale_mn, double scale_mx, StereoCalibration * calib)
 {
-    qDebug() << "overlay stereo";
+    //qDebug() << "overlay stereo";
     this->stereo_mode = true;
     this->calib = calib;
     init(size_x, size_y, scale_mn, scale_mx);
@@ -39,6 +39,7 @@ void Overlay::init(int size_x, int size_y, double scale_mn, double scale_mx)
     r = new vector<float> ( r1, r1 + sizeof(r1) / sizeof(int) );
     g = new vector<float> ( g1, g1 + sizeof(g1) / sizeof(int) );
     b = new vector<float> ( b1, b1 + sizeof(b1) / sizeof(int) );
+    //qDebug() << "def";
 
     // determine interval
     scale_max = scale_mx;
@@ -116,17 +117,17 @@ void Overlay::drawCircle(int x, int y, int radius, double val)
 {
     // highly efficient overlay computation :)
 
-    qDebug() << stereo_mode;
+    //qDebug() << stereo_mode;
     // if stereo is enabled, map back to visual image
     if (stereo_mode)
     {
-        qDebug() << "should never go here";
-        qDebug() << x;
+        //qDebug() << "should never go here";
+        //qDebug() << x;
     }
     else
     {
-        qDebug() << "stereo off";
-        qDebug() << x;
+        //qDebug() << "stereo off";
+        //qDebug() << x;
     }
 
 
@@ -175,7 +176,7 @@ void Overlay::drawCircle(int x, int y, int radius, double val)
     }
     catch(int e)
     {
-        qDebug() << "Overlay Update Failed!";
+        //qDebug() << "Overlay Update Failed!";
         return;
     }
     if (val<scale_min)
@@ -249,11 +250,63 @@ void Overlay::drawColorBar()
         }
 
     sprintf(str_mx1,"%2.2f",scale_max);
-    putText(RGBimage, str_mx1, Point2f(x_from-20,y_from-25), FONT_HERSHEY_PLAIN, 2,  Scalar(0,0,255,255));
+    putText(RGBimage, str_mx1, Point2f(x_from-20,y_from-25), FONT_HERSHEY_PLAIN, 2,  Scalar(0,0,255,255), 2);
 
     sprintf(str_mn1,"%2.2f",scale_min);
-    putText(RGBimage, str_mn1, Point2f(x_from-20,y_to+50),   FONT_HERSHEY_PLAIN, 2,  Scalar(0,0,255,255));
+    putText(RGBimage, str_mn1, Point2f(x_from-20,y_to+50),   FONT_HERSHEY_PLAIN, 2,  Scalar(0,0,255,255), 2);
 
+}
+
+void Overlay::drawCurrentVal(double val, int channel)
+{
+    int fontFace = FONT_HERSHEY_PLAIN;
+    int fontScale = 2;
+    int thickness = 3;
+
+    int y_from = values.rows-60;
+    int y_to = values.rows-20;
+
+    int x_from = values.cols/2-60;
+    int x_to = values.cols/2+60;
+
+    int r0, g0, b0;
+    int r1, g1, b1;
+
+    if (val>=scale_min && val<=scale_max)
+    {
+        int val0 = (int) ( (val-scale_min)/(scale_max-scale_min)*255);
+
+        r0 = (int) (r->at(val0)*255);
+        g0 = (int) (g->at(val0)*255);
+        b0 = (int) (b->at(val0)*255);
+    }
+    else
+    {
+        r0 = 0; g0 = 0; b0 = 0;
+    }
+
+    if (r0+g0+b0>383)
+    {
+        r1 = 0; g1 = 0; b1 = 0;
+    }
+    else
+    {
+        r1 = 255; g1 = 255; b1 = 255;
+    }
+
+
+    rectangle(RGBimage, Point(x_from,y_from), Point(x_to, y_to), Scalar(b0,g0,r0), cv::FILLED, 8, 0);
+    char str[10];
+    sprintf(str,"%2.2f",val);
+    putText(RGBimage, str, Point2f(x_from+10,y_to-8), fontFace, fontScale,  Scalar(b1,g1,r1,255),thickness);
+    char str1[10];
+    if (channel>0)
+        sprintf(str1,"CH%i",channel);
+    else if (channel==0)
+        sprintf(str1,"Profile");
+
+    rectangle(RGBimage, Point(x_to+9,y_from), Point(x_to+150, y_to), Scalar(0,0,0), cv::FILLED, 8, 0);
+    putText(RGBimage, str1, Point2f(x_to+10,y_to-8), fontFace, fontScale,  Scalar(255,255,255,255),thickness);
 }
 
 double Overlay::getValue(int x, int y)

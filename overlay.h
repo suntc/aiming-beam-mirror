@@ -21,6 +21,7 @@ public:
     double getUpperBound();
     void setNewInterval(double mn, double mx);
     void drawColorBar();
+    void drawCurrentVal(double val, int channel);
     cv::Mat values;
     cv::Mat mergeOverlay(cv::Mat frame);
     double getValue(int x, int y);

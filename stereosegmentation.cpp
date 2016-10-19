@@ -38,10 +38,27 @@ void StereoSegmentation::startSegmentation(Mat frame_l, Mat frame_r, Mat frame_v
 
     ellipse(frame_vis, calib->getRectifiedPoint(Point(seg->last_x,seg->last_y),0), Size(5,5), 0, 0, 360, Scalar( 0, 0, 255 ), 3, 8, 0);
 
+    double lifetime = 0;
+    switch(current_channel) {
+        case 1:
+        lifetime=lt_ch1;
+        break;
+        case 2:
+        lifetime=lt_ch2;
+        break;
+        case 3:
+        lifetime=lt_ch3;
+        break;
+        case 4:
+        lifetime=lt_ch4;
+        break;
+    }
+    overlay->drawCurrentVal(lifetime,current_channel);
     // if beam is found in the left frame, search for it in the right frame
     // we assume that both frames are rectified (calibration required, see stereocalibration.cpp)
     if (seg->last_active)
     {
+
         if (lt_ch1>0)
         {
             if (lt_ch1>ch1_overlay->getUpperBound())
@@ -105,9 +122,11 @@ void StereoSegmentation::startSegmentation(Mat frame_l, Mat frame_r, Mat frame_v
 
         double correlation = seg->doubleRingSegmentation(frame_r_cut, x, y, radius);
 
-
+        qDebug() << lifetime;
+        qDebug() << correlation;
         if (correlation>(seg->thres))
         {
+
             // both beam positions are available
 
             //Point2d beam_proj_l(beam_pos);
@@ -127,6 +146,9 @@ void StereoSegmentation::startSegmentation(Mat frame_l, Mat frame_r, Mat frame_v
 
             // convert from homogenous to Eucledian coordinats
             double height = res.at<Vec4d>(0,0)[2] / res.at<Vec4d>(0,0)[3];
+
+            if (current_channel==0)
+                overlay->drawCurrentVal(height,current_channel);
 
             Point2d beam_pos_vis(calib->getRectifiedPoint(beam_pos,0));
             //ellipse(frame_vis, beam_pos_vis, Size(5,5), 0, 0, 360, Scalar( 0, 255, 0 ), 3, 8, 0);
@@ -198,6 +220,7 @@ void StereoSegmentation::setThreshold(double thres)
 
 void StereoSegmentation::switchChannel(int channel)
 {
+    current_channel = channel;
     if(channel==1)
         overlay = ch1_overlay;
     if(channel==2)

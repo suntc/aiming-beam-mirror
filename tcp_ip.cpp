@@ -73,7 +73,7 @@ TCP_IP::TCP_IP(const char *ip, const char *port)
                     status = connect(socketfd, host_info_list->ai_addr, host_info_list->ai_addrlen);
                     if (status == SOCKET_ERROR)
                     {
-                        qDebug() << "Connection Error!";
+                        //qDebug() << "Connection Error!";
                         closesocket(socketfd);
                         socketfd = INVALID_SOCKET;
 
@@ -273,7 +273,7 @@ bool TCP_IP::disconnect()
     WSACleanup();
     isConnected = false;
 
-    qDebug() << "Disconnected";
+    //qDebug() << "Disconnected";
     return true;
 
 }

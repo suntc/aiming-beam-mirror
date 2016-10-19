@@ -39,6 +39,7 @@ private:
     int disparity_range = 700; // to be adapted to configuration and resolution
     StereoCalibration* calib;
     bool firstFrameSet;
+    int current_channel=1;
 };
 
 #endif // STEREOSEGMENTATION_H

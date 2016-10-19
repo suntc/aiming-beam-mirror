@@ -18,7 +18,6 @@ using namespace std;
 
 Segmentation::Segmentation(Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ, StereoCalibration* calib)
 {
-    qDebug() << "overlay stereo";
     Size s = frame.size();
     res_x = s.width;
     res_y = s.height;
@@ -33,7 +32,6 @@ Segmentation::Segmentation(Mat frame, cv::Point point1, cv::Point point2, bool i
 
 Segmentation::Segmentation(Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ)
 {
-    qDebug() << "overlay mono";
     Size s = frame.size();
     res_x = s.width;
     res_y = s.height;
@@ -51,6 +49,8 @@ Segmentation::Segmentation(Mat frame, cv::Point point1, cv::Point point2, bool i
 
 void Segmentation::switchChannel(int channel)
 {
+    current_channel = channel;
+
     switch(channel) {
         case 1:
         overlay=ch1_overlay;
@@ -180,7 +180,7 @@ void Segmentation::startSegmentation(Mat frame, double lt_ch1, double lt_ch2, do
         firstFrameSet = true;
     }
 
-    double lifetime;
+    double lifetime = 0;
     switch(current_channel) {
         case 1:
         lifetime=lt_ch1;
@@ -195,6 +195,9 @@ void Segmentation::startSegmentation(Mat frame, double lt_ch1, double lt_ch2, do
         lifetime=lt_ch4;
         break;
     }
+    if (!stereo_setup)
+        overlay->drawCurrentVal(lifetime, current_channel);
+
 
     frame_no++;
 
@@ -215,6 +218,7 @@ void Segmentation::startSegmentation(Mat frame, double lt_ch1, double lt_ch2, do
     //}
     if(!stereo_setup)
     {
+
         if (lt_ch1>0)
         {
             if (lt_ch1>ch1_overlay->getUpperBound())
@@ -327,6 +331,7 @@ void Segmentation::startSegmentation(Mat frame, double lt_ch1, double lt_ch2, do
             Mat frame_cut = frame_diff(corrArea);
 
             correlation = doubleRingSegmentation(frame_cut, x, y, radius);
+            //correlation = pulsedSegmentation(frame_cut, x, y, radius);
 
             int x_n=last_x; int y_n=last_y;
             if (correlation > thres)
@@ -337,8 +342,8 @@ void Segmentation::startSegmentation(Mat frame, double lt_ch1, double lt_ch2, do
             }
         }
     }
-    char str[10];
-    sprintf(str,"%f",correlation); // %f correlation
+    //char str[10];
+    //sprintf(str,"%f",correlation); // %f correlation
     if (correlation > thres)
     {
 
@@ -413,7 +418,7 @@ void Segmentation::startSegmentation(Mat frame, double lt_ch1, double lt_ch2, do
             ch4_overlay->drawCircle(x,y,radius*0.5,lt_ch4);
         }
 
-        putText(frame, str, Point2f(100,100), FONT_HERSHEY_PLAIN, 2,  Scalar(255,0,0,255));
+        //putText(frame, str, Point2f(100,100), FONT_HERSHEY_PLAIN, 2,  Scalar(255,0,0,255));
 
         //if(stereo_setup==true)
         //{
@@ -458,7 +463,7 @@ void Segmentation::startSegmentation(Mat frame, double lt_ch1, double lt_ch2, do
 
 
 
-        putText(frame, str, Point2f(100,100), FONT_HERSHEY_PLAIN, 2,  Scalar(0,0,255,255));
+        //putText(frame, str, Point2f(100,100), FONT_HERSHEY_PLAIN, 2,  Scalar(0,0,255,255));
         last_active=false;
     }
 
@@ -480,6 +485,7 @@ void Segmentation::startSegmentation(Mat frame, double lt_ch1, double lt_ch2, do
     //sprintf(str,"%f",lifetime);
     //putText(frame, str, Point2f(200,200), FONT_HERSHEY_PLAIN, 2,  Scalar(0,255,0,255));
     //imshow("activeDisplay", dst );
+
     return;
 }
 
@@ -506,8 +512,8 @@ float Segmentation::simpleThreshold(cv::Mat frame, int &x, int &y, int &radius)
     //y = 0;
     radius = 10;
 
-    const char * filename1 = "test1.jpg";
-    cvSaveImage(filename1, &(IplImage(frameBlueOCL)));
+    //const char * filename1 = "test1.jpg";
+    //cvSaveImage(filename1, &(IplImage(frameBlueOCL)));
 
     int struct_type = MORPH_ELLIPSE;    // Structured element type is ellipse
 
@@ -531,8 +537,8 @@ float Segmentation::simpleThreshold(cv::Mat frame, int &x, int &y, int &radius)
 
 
 
-    const char * filename2 = "test2.jpg";
-    cvSaveImage(filename2, &(IplImage(frameBlueOCL)));
+    //const char * filename2 = "test2.jpg";
+    //cvSaveImage(filename2, &(IplImage(frameBlueOCL)));
 
 
 
@@ -898,7 +904,7 @@ float Segmentation::doubleRingSegmentation(cv::Mat frame, int &x, int &y, int &r
     int val_max = 255; //255; // Value max
 
     // thresholds for outer ring
-    int hue_min_border = 100; //85;  // Hue min
+    int hue_min_border = 60; //100;  // Hue min
     int hue_max_border = 160; //120; // Hue max
     int sat_min_border = 0;  // Saturation min
     int sat_max_border = 255; // Saturation max
@@ -959,7 +965,7 @@ float Segmentation::doubleRingSegmentation(cv::Mat frame, int &x, int &y, int &r
         double beam_criteria = b/a;
 
         // the outer ring has a dominant blue shimmer
-        if (beam_criteria<0.58)
+        if (beam_criteria<0.4) //0.58
         {
             // if not delete candidate
             contourSize=0;
@@ -971,8 +977,9 @@ float Segmentation::doubleRingSegmentation(cv::Mat frame, int &x, int &y, int &r
     int maxPos = distance(beam_sizes.begin(), max_element(beam_sizes.begin(), beam_sizes.end()));
 
     if (mx_size<5)
+    {
             return 0;
-
+    }
     // fit ellipse
     RotatedRect fittedEllipse = fitEllipse(Mat(contours[maxPos]));
 
@@ -1010,7 +1017,9 @@ float Segmentation::doubleRingSegmentation(cv::Mat frame, int &x, int &y, int &r
         minMaxIdx(I_val, &minVal, &maxVal);
         subtract(I_val, (minVal - 1), I_val);
         if (it.count<=1)
+        {
             return 0;
+        }
         I_val.at<double>(0, 0) = 1;
         I_val.at<double>((it.count - 1), 0) = 1;
 
@@ -1051,7 +1060,7 @@ float Segmentation::doubleRingSegmentation(cv::Mat frame, int &x, int &y, int &r
     {
         return 0;
     }
-    radius = ( fittedEllipse.size.height+fittedEllipse.size.width ) / 4;
+    radius = ( fittedEllipse.size.height+fittedEllipse.size.width ) / 4; //2
     x = fittedEllipse.center.x;
     y = fittedEllipse.center.y;
 
@@ -1060,4 +1069,88 @@ float Segmentation::doubleRingSegmentation(cv::Mat frame, int &x, int &y, int &r
         return 0;
     }
     return 1;
+}
+
+float Segmentation::pulsedSegmentation(cv::Mat frame, int &x, int &y, int &radius)
+{
+    frame2 = frame1;
+    Mat frame_hsv;
+    Mat frame_lab;
+    //cvtColor(frame, frame_hsv, CV_BGR2HSV);
+    cvtColor(frame, frame_lab, CV_BGR2Lab);
+    extractChannel (frame_lab, frame_lab, 2 );
+    frame1 = frame_lab;
+
+    if( frame_no < 2)
+        return 0;
+
+    Mat img_diff;
+    img_diff = abs(frame1 - frame2);
+const char * filenamef1 = "frame1.jpg";
+cvSaveImage(filenamef1, &(IplImage(frame1)));
+const char * filenamef2 = "frame2.jpg";
+cvSaveImage(filenamef2, &(IplImage(frame2)));
+
+    int thres = 40; //255; //255; // Hue max
+    threshold(img_diff, img_diff, thres, 255, THRESH_BINARY);
+qDebug() << "1";
+
+const char * filename1 = "im1.jpg";
+cvSaveImage(filename1, &(IplImage(img_diff)));
+
+    Mat element = getStructuringElement(MORPH_ELLIPSE, Size(2*struct_size1 + 1, 2*struct_size1 + 1),Point(-1, -1)); // Creat structured element of size 3
+    morphologyEx(img_diff, img_diff, MORPH_ERODE, element);
+
+const char * filename2 = "im2.jpg";
+cvSaveImage(filename2, &(IplImage(img_diff)));
+
+    vector<vector<Point> > contours;
+    //vector<Vec4i> hierarchy;
+    findContours(img_diff, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
+qDebug() << "2";
+    int size_max=0;
+    int ind=0;
+    for(int i = 0; i < (int)contours.size(); i++) // For all the contours
+    {
+        int contourSize = contourArea(contours[i], false);
+        if (contourSize>size_max)
+        {
+            size_max = contourSize;
+            ind = i;
+        }
+    }
+    if(contours.size()==0 || size_max<5)
+        return 0;
+
+    //const char * filename3 = "im3.jpg";
+    //cvSaveImage(filename3, &(IplImage(Mat(contours[ind]))));
+
+qDebug() << "3";
+    RotatedRect fittedEllipse = fitEllipse(Mat(contours[ind]));
+qDebug() << "3.5";
+    radius = ( fittedEllipse.size.height+fittedEllipse.size.width ) / 2; //2
+    x = fittedEllipse.center.x;
+    y = fittedEllipse.center.y;
+qDebug() << "4";
+    return 1;
+
+
+    //Mat frameBlueOCL1;
+    //inRange(frame1, Scalar(hue_min, sat_min, val_min), Scalar(hue_max, sat_max, val_max), frameBlueOCL1); // HSV thresholding
+
+    //Mat frameBlueOCL2;
+    //inRange(frame2, Scalar(hue_min, sat_min, val_min), Scalar(hue_max, sat_max, val_max), frameBlueOCL2); // HSV thresholding
+
+    //vector<Point> area1;
+    //vector<Point> area2;
+    //findNonZero(frameBlueOCL1,area1);
+    //findNonZero(frameBlueOCL2,area2);
+
+    //double a = area1.size();
+    //double b = area2.size();
+
+    //qDebug() << a;
+    //qDebug() << b;
+
+    return 0;
 }
