@@ -47,7 +47,7 @@ public:
     float correlateGaussian(cv::Mat frame, int &x, int &y, int &radius);
     float simpleThreshold(cv::Mat frame, int &x, int &y, int &radius);
     float doubleRingSegmentation(cv::Mat frame, int &x, int &y, int &radius);
-    float pulsedSegmentation(cv::Mat frame, int &x, int &y, int &radius);
+    float pulsedSegmentation(cv::Mat frame, cv::Rect corrArea,int &x, int &y, int &radius);
     int res_x;
     int res_y;
 

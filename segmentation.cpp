@@ -330,8 +330,8 @@ void Segmentation::startSegmentation(Mat frame, double lt_ch1, double lt_ch2, do
 
             Mat frame_cut = frame_diff(corrArea);
 
-            correlation = doubleRingSegmentation(frame_cut, x, y, radius);
-            //correlation = pulsedSegmentation(frame_cut, x, y, radius);
+            //correlation = doubleRingSegmentation(frame_cut, x, y, radius);
+            correlation = pulsedSegmentation(frame, corrArea, x, y, radius);
 
             int x_n=last_x; int y_n=last_y;
             if (correlation > thres)
@@ -1060,7 +1060,7 @@ float Segmentation::doubleRingSegmentation(cv::Mat frame, int &x, int &y, int &r
     {
         return 0;
     }
-    radius = ( fittedEllipse.size.height+fittedEllipse.size.width ) / 4; //2
+    radius = ( fittedEllipse.size.height+fittedEllipse.size.width ) / 2; //2
     x = fittedEllipse.center.x;
     y = fittedEllipse.center.y;
 
@@ -1071,7 +1071,7 @@ float Segmentation::doubleRingSegmentation(cv::Mat frame, int &x, int &y, int &r
     return 1;
 }
 
-float Segmentation::pulsedSegmentation(cv::Mat frame, int &x, int &y, int &radius)
+float Segmentation::pulsedSegmentation(cv::Mat frame, Rect corrArea, int &x, int &y, int &radius)
 {
     frame2 = frame1;
     Mat frame_hsv;
@@ -1085,13 +1085,13 @@ float Segmentation::pulsedSegmentation(cv::Mat frame, int &x, int &y, int &radiu
         return 0;
 
     Mat img_diff;
-    img_diff = abs(frame1 - frame2);
+    img_diff = abs(frame1(corrArea) - frame2(corrArea));
 const char * filenamef1 = "frame1.jpg";
-cvSaveImage(filenamef1, &(IplImage(frame1)));
+cvSaveImage(filenamef1, &(IplImage(frame1(corrArea))));
 const char * filenamef2 = "frame2.jpg";
-cvSaveImage(filenamef2, &(IplImage(frame2)));
+cvSaveImage(filenamef2, &(IplImage(frame2(corrArea))));
 
-    int thres = 40; //255; //255; // Hue max
+    int thres = 10; //40; //255; //255; // Hue max
     threshold(img_diff, img_diff, thres, 255, THRESH_BINARY);
 qDebug() << "1";
 
