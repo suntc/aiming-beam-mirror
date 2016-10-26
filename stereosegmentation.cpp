@@ -34,7 +34,7 @@ void StereoSegmentation::startSegmentation(Mat frame_l, Mat frame_r, Mat frame_v
         firstFrameSet = true;
     }
     // do segmentation in the left videoframe
-    seg->startSegmentation(frame_l, lt_ch1, lt_ch2, lt_ch3, lt_ch4);
+    //seg->startSegmentation(frame_l, lt_ch1, lt_ch2, lt_ch3, lt_ch4);
 
     ellipse(frame_vis, calib->getRectifiedPoint(Point(seg->last_x,seg->last_y),0), Size(5,5), 0, 0, 360, Scalar( 0, 0, 255 ), 3, 8, 0);
 

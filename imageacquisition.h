@@ -12,15 +12,21 @@ class imageAcquisition
 {
 public:
     cv::Mat frame;
+    cv::Mat ref_frame;
+    cv::Mat readout_frame;
+    cv::Mat frame_on;
+    cv::Mat frame_off;
     bool ctrl = false;
     bool thread = false;
     bool inAcquisition = false;
     bool ready = false;
     bool stereomode = false;
+    bool aiming_beam_bool = false;
     int channel = 1;
     double threshold = 0.96;
     imageAcquisition(bool stereomode);
     void startAcquisition();
+    void captureFrame();
     VideoInput *cam;
     VideoInputStereo *stereo_cam;
     void startupCamera(int ch, float thres);
@@ -28,6 +34,7 @@ public:
     void set_lifetime(double val, int channel);
     void set_resolution(int w, int h);
     void set_mode(bool stereomode);
+    void setAimingBeam(bool aiming_beam);
     std::string subject;
     int run_number;
     Segmentation* seg;
@@ -42,6 +49,7 @@ private:
     int width = 852;
     int height = 459;
     std::string infix;
+    bool writing = false;
 };
 
 #endif // IMAGEACQUISITION_H

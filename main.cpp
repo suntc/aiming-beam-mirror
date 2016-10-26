@@ -74,7 +74,7 @@ void startup(GUIupdater *ui)
     // other vars
     string subject;     // case ID no.
     bool aiming_beam_correction = false;    // automatic correction of the aiming beam
-    int aiming_beam_value = 0;  // aiming beam power (0 to 100)
+    bool aiming_beam_value = false;  // aiming beam power (0 to 100)
     bool invivo = false;    // ex vivo false, in vivo true
     float time_resolution = 0;  // digitizer time resolution, value in ns
     int data_length = 0;    // length of the fluorescence data in each channel?
@@ -178,6 +178,8 @@ void startup(GUIupdater *ui)
 
         // start acquisition thread, to run indefinitely
         boost::thread AcquisitionThread(ThreadWrapper::StartAcquire, acq);
+        boost::thread FrameAcquisition(ThreadWrapper::StartFrameCapture, acq);
+
         while (true){
 
             // initialize deconvolution only once
@@ -219,7 +221,7 @@ void startup(GUIupdater *ui)
 
 
                 // disconnecting from peer
-                //qDebug() << "disconnecting";
+                qDebug() << "disconnecting";
 
                 // send acknowledgment
                 conn.write("disconnect:1\r\n");
@@ -265,7 +267,10 @@ void startup(GUIupdater *ui)
             {
 
                 // aiming beam value
-                aiming_beam_value = stoi(value);
+                aiming_beam_value = (value.compare("1") == 0) ? true : false;
+
+                // set value for segmentation
+                acq->setAimingBeam(aiming_beam_value);
                 conn.write(set_ack(key, value));
             }
 
@@ -624,6 +629,9 @@ void startup(GUIupdater *ui)
         acq->thread = false;
         AcquisitionThread.join();
         AcquisitionThread.detach();
+
+        FrameAcquisition.join();
+        FrameAcquisition.detach();
 
     } else {
         ui->throwError("Connection not OK");

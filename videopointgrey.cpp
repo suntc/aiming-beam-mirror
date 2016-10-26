@@ -58,6 +58,9 @@ VideoPointGrey::VideoPointGrey()
         return;
     }
 
+    //cam.SetVideoModeAndFrameRate(FlyCapture2::VIDEOMODE_1280x960RGB, FlyCapture2::FRAMERATE_120 );
+
+
     connected = true;
 
 }

@@ -166,13 +166,14 @@ void Segmentation::init(Mat frame, cv::Point point1, cv::Point point2, bool inte
 
     // initialize the overlays of all four channels
 
-
-
+    x0 = ROI_left_upper.x;
+    y0 = ROI_left_upper.y;
+    x1 = ROI_right_lower.x-ROI_left_upper.x;
+    y1 = ROI_right_lower.y-ROI_left_upper.y;
 }
 
-void Segmentation::startSegmentation(Mat frame, double lt_ch1, double lt_ch2, double lt_ch3, double lt_ch4)
+void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, double lt_ch1, double lt_ch2, double lt_ch3, double lt_ch4)
 {
-
     if (!firstFrameSet)
     {
         firstFrame = frame.clone();
@@ -205,6 +206,7 @@ void Segmentation::startSegmentation(Mat frame, double lt_ch1, double lt_ch2, do
     Mat frame_diff = frame.clone();
     if (subtract_first_frame)
     {
+        qDebug() << "subtract";
         frame_diff=frame-firstFrame;
     }
 
@@ -326,13 +328,29 @@ void Segmentation::startSegmentation(Mat frame, double lt_ch1, double lt_ch2, do
             int yfrom = (last_y-area_dim < ROI_left_upper.y ) ? ROI_left_upper.y  : last_y-area_dim;
             int xto   = (last_x+area_dim > ROI_right_lower.x) ? ROI_right_lower.x : last_x+area_dim;
             int yto   = (last_y+area_dim > ROI_right_lower.y) ? ROI_right_lower.y : last_y+area_dim;
+
+            xfrom = 300;
+            yfrom = 300;
+            xto = 700;
+            yto = 700;
             Rect corrArea(xfrom, yfrom, xto-xfrom, yto-yfrom);
+
+            //x0 = xfrom;
+            //y0 = yfrom;
+            //x1 = xto-xfrom;
+            //y1 = yto-yfrom;
+            x0 = xfrom;
+            y0 = yfrom;
+            x1 = xto-xfrom;
+            y1 = yto-yfrom;
+
 
             Mat frame_cut = frame_diff(corrArea);
 
             //correlation = doubleRingSegmentation(frame_cut, x, y, radius);
-            correlation = pulsedSegmentation(frame, corrArea, x, y, radius);
+            correlation = pulsedSegmentation(frame_on, frame_off, corrArea, x, y, radius);
 
+            qDebug() << correlation;
             int x_n=last_x; int y_n=last_y;
             if (correlation > thres)
             {
@@ -449,6 +467,7 @@ void Segmentation::startSegmentation(Mat frame, double lt_ch1, double lt_ch2, do
     else
     {
         last_vanish = 1;
+        //last_found == 2;
         last_found++;
         if (last_found == 2)
         {
@@ -1071,6 +1090,85 @@ float Segmentation::doubleRingSegmentation(cv::Mat frame, int &x, int &y, int &r
     return 1;
 }
 
+float Segmentation::pulsedSegmentation(cv::Mat frame_on, cv::Mat frame_off, Rect corrArea, int &x, int &y, int &radius)
+{
+    qDebug() << "flag 1";
+    Mat lab_on, lab_off;
+    // convert to lab space
+    cvtColor(frame_on, lab_on, CV_BGR2Lab);
+    extractChannel (lab_on, lab_on, 2 );
+    cvtColor(frame_off, lab_off, CV_BGR2Lab);
+    extractChannel (lab_off, lab_off, 2 );
+
+    qDebug() << "flag 2";
+    //const char * filename2 = "frameon.jpg";
+    //cvSaveImage(filename2, &(IplImage(lab_on(corrArea))));
+
+    //const char * filename1 = "frameoff.jpg";
+    //cvSaveImage(filename1, &(IplImage(lab_off(corrArea))));
+
+    // compute difference between frames
+    Mat img_diff;
+    img_diff = abs(lab_on(corrArea) - lab_off(corrArea));
+    qDebug() << "flag 3";
+    //const char * filename3 = "framediff.jpg";
+    //cvSaveImage(filename3, &(IplImage(img_diff)));
+
+    int thres = 40; //40; //255; //255; // Hue max
+    threshold(img_diff, img_diff, thres, 255, THRESH_BINARY);
+    qDebug() << "flag 4";
+
+    // Floodfill from point (0, 0)
+    Mat im_floodfill = img_diff.clone();
+    floodFill(im_floodfill, cv::Point(0,0), Scalar(255));
+    qDebug() << "flag 5";
+    // Invert floodfilled image
+    Mat im_floodfill_inv;
+    bitwise_not(im_floodfill, im_floodfill_inv);
+    qDebug() << "flag 6";
+    // Combine the two images to get the foreground.
+    Mat im_out = (img_diff | im_floodfill_inv);
+    img_diff = im_out;
+    qDebug() << "flag 7";
+    //const char * filename3 = "framediff.jpg";
+    //cvSaveImage(filename3, &(IplImage(img_diff)));
+    qDebug() << "flag 8";
+    Mat element = getStructuringElement(MORPH_ELLIPSE, Size(2*struct_size1 + 1, 2*struct_size1 + 1),Point(-1, -1)); // Creat structured element of size 3
+    morphologyEx(img_diff, img_diff, MORPH_ERODE, element);
+    qDebug() << "flag 9";
+    vector<vector<Point> > contours;
+    findContours(img_diff, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
+    qDebug() << "flag 10";
+    int size_max=0;
+    int ind=0;
+    for(int i = 0; i < (int)contours.size(); i++) // For all the contours
+    {
+        int contourSize = contourArea(contours[i], false);
+        if (contourSize>size_max)
+        {
+            size_max = contourSize;
+            ind = i;
+        }
+    }
+
+    qDebug() << "flag 11";
+    if(contours.size()==0 || size_max<5)
+        return 0;
+
+    qDebug() << "flag 12";
+    RotatedRect fittedEllipse = fitEllipse(Mat(contours[ind]));
+    radius = ( fittedEllipse.size.height+fittedEllipse.size.width ) / 2; //2
+    x = fittedEllipse.center.x;
+    y = fittedEllipse.center.y;
+    qDebug() << "flag 13";
+
+    return 1;
+
+
+
+}
+
+/*
 float Segmentation::pulsedSegmentation(cv::Mat frame, Rect corrArea, int &x, int &y, int &radius)
 {
     frame2 = frame1;
@@ -1086,28 +1184,28 @@ float Segmentation::pulsedSegmentation(cv::Mat frame, Rect corrArea, int &x, int
 
     Mat img_diff;
     img_diff = abs(frame1(corrArea) - frame2(corrArea));
-const char * filenamef1 = "frame1.jpg";
-cvSaveImage(filenamef1, &(IplImage(frame1(corrArea))));
-const char * filenamef2 = "frame2.jpg";
-cvSaveImage(filenamef2, &(IplImage(frame2(corrArea))));
+//const char * filenamef1 = "frame1.jpg";
+//cvSaveImage(filenamef1, &(IplImage(frame1(corrArea))));
+//const char * filenamef2 = "frame2.jpg";
+//cvSaveImage(filenamef2, &(IplImage(frame2(corrArea))));
 
-    int thres = 10; //40; //255; //255; // Hue max
+    int thres = 15; //40; //255; //255; // Hue max
     threshold(img_diff, img_diff, thres, 255, THRESH_BINARY);
-qDebug() << "1";
+//qDebug() << "1";
 
-const char * filename1 = "im1.jpg";
-cvSaveImage(filename1, &(IplImage(img_diff)));
+//const char * filename1 = "im1.jpg";
+//cvSaveImage(filename1, &(IplImage(img_diff)));
 
     Mat element = getStructuringElement(MORPH_ELLIPSE, Size(2*struct_size1 + 1, 2*struct_size1 + 1),Point(-1, -1)); // Creat structured element of size 3
     morphologyEx(img_diff, img_diff, MORPH_ERODE, element);
 
-const char * filename2 = "im2.jpg";
-cvSaveImage(filename2, &(IplImage(img_diff)));
+//const char * filename2 = "im2.jpg";
+//cvSaveImage(filename2, &(IplImage(img_diff)));
 
     vector<vector<Point> > contours;
     //vector<Vec4i> hierarchy;
     findContours(img_diff, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
-qDebug() << "2";
+//qDebug() << "2";
     int size_max=0;
     int ind=0;
     for(int i = 0; i < (int)contours.size(); i++) // For all the contours
@@ -1119,19 +1217,20 @@ qDebug() << "2";
             ind = i;
         }
     }
+    //qDebug() << contours.size();
     if(contours.size()==0 || size_max<5)
         return 0;
 
     //const char * filename3 = "im3.jpg";
     //cvSaveImage(filename3, &(IplImage(Mat(contours[ind]))));
 
-qDebug() << "3";
+//qDebug() << "3";
     RotatedRect fittedEllipse = fitEllipse(Mat(contours[ind]));
-qDebug() << "3.5";
+//qDebug() << "3.5";
     radius = ( fittedEllipse.size.height+fittedEllipse.size.width ) / 2; //2
     x = fittedEllipse.center.x;
     y = fittedEllipse.center.y;
-qDebug() << "4";
+//qDebug() << "4";
     return 1;
 
 
@@ -1154,3 +1253,4 @@ qDebug() << "4";
 
     return 0;
 }
+*/

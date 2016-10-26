@@ -5,10 +5,10 @@
 #include "imageacquisition.h"
 #include <boost/thread.hpp>
 
-void ThreadWrapper::startSegmentationThread(Segmentation *seg, cv::Mat frame, double lt1, double lt2, double lt3, double lt4)
+void ThreadWrapper::startSegmentationThread(Segmentation *seg, cv::Mat frame, cv::Mat frame_on, cv::Mat frame_off, double lt1, double lt2, double lt3, double lt4)
 {
 
-    seg->startSegmentation(frame, lt1, lt2, lt3, lt4);
+    seg->startSegmentation(frame, frame_on, frame_off, lt1, lt2, lt3, lt4);
 
 }
 
@@ -31,4 +31,9 @@ void ThreadWrapper::StartRead(TCP_IP &obj, string *output, int *len, vector<doub
 void ThreadWrapper::StartAcquire(imageAcquisition *acq)
 {
     acq->startAcquisition();
+}
+
+void ThreadWrapper::StartFrameCapture(imageAcquisition *acq)
+{
+    acq->captureFrame();
 }

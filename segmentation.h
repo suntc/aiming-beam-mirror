@@ -13,7 +13,7 @@ public:
     Segmentation(cv::Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ, StereoCalibration * calib);
     //~Segmentation();
 
-    void startSegmentation(cv::Mat frame, double lt_ch1, double lt_ch2, double lt_ch3, double lt_ch4);
+    void startSegmentation(cv::Mat frame, cv::Mat frame_on, cv::Mat frame_off, double lt_ch1, double lt_ch2, double lt_ch3, double lt_ch4);
     void setThreshold(double thres);
     void switchChannel(int channel);
 
@@ -41,20 +41,25 @@ public:
     int last_y;
     int last_active;
 
+
     float thres;
 
     cv::Mat* createFilter(int sigma);
     float correlateGaussian(cv::Mat frame, int &x, int &y, int &radius);
     float simpleThreshold(cv::Mat frame, int &x, int &y, int &radius);
     float doubleRingSegmentation(cv::Mat frame, int &x, int &y, int &radius);
-    float pulsedSegmentation(cv::Mat frame, cv::Rect corrArea,int &x, int &y, int &radius);
+    float pulsedSegmentation(cv::Mat frame_on, cv::Mat frame_off, cv::Rect corrArea,int &x, int &y, int &radius);
     int res_x;
     int res_y;
+
+    int y0, y1, x0, x1;
+
 
     vector<cv::Mat> frames;
 private:
    // const static int* radius_values; // only even!!
-
+    cv::Point ROI_left_upper;
+    cv::Point ROI_right_lower;
     void init(cv::Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ);
 
     bool firstFrameSet = false;
@@ -62,15 +67,14 @@ private:
     int *radius_values;
     static const int no_gaussians = 11; // 14;
 
-    cv::Point ROI_left_upper;
-    cv::Point ROI_right_lower;
+
     int current_channel;
     int log_coords_x_failed;
     int log_coords_y_failed;
     int log_radius_failed;
     vector<double> log_lifetime_failed;
     int num_of_int_steps;
-    int last_found;
+    int last_found = 0;
     int last_vanish = 1;
     double last_lt_ch1;
     double last_lt_ch2;
