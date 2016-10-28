@@ -41,6 +41,10 @@ public:
     StereoSegmentation* seg_stereo;
     StereoCalibration *calib;
 
+    void setAutoScale(bool autoscale);
+    void setScale(double mn, double mx);
+    void setAnsi(int ansi);
+
 private:
     double ch1_tau;
     double ch2_tau;
@@ -50,6 +54,10 @@ private:
     int height = 459;
     std::string infix;
     bool writing = false;
+    double scale_max = 2;
+    double scale_min = 3;
+    bool scale_auto;
+    int ansi = 999999;
 };
 
 #endif // IMAGEACQUISITION_H

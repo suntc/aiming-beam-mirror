@@ -11,7 +11,7 @@ using namespace std;
 class Overlay
 {
 public:
-    Overlay(int res_x, int res_y, double scale_mn, double scale_mx);
+    Overlay(int res_x, int res_y, double scale_mn, double scale_mx, int ansi);
     Overlay(int res_x, int res_y, double scale_mn, double scale_mx, StereoCalibration * calib);
     void drawCircle(int x, int y, int radius, double val);
     cv::Mat getOverlay();
@@ -20,6 +20,7 @@ public:
     double getLowerBound();
     double getUpperBound();
     void setNewInterval(double mn, double mx);
+    void setAnsi(int ansi);
     void drawColorBar();
     void drawCurrentVal(double val, int channel);
     cv::Mat values;
@@ -41,6 +42,8 @@ private:
     cv::Mat RGBimage;
     char str_mx1[4];
     char str_mn1[4];
+    bool autoscale;
+    int ansi = 99999;
 
     StereoCalibration * calib;
 };

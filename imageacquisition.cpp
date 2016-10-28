@@ -10,6 +10,8 @@
 #include "videowriter_ab.h"
 #include "IOTxtData.h"
 
+#define NO_LIFETIME -1
+
 using namespace cv;
 
 imageAcquisition::imageAcquisition(bool stereomode)
@@ -37,6 +39,9 @@ void imageAcquisition::startupCamera(int ch, float thres)
     }
     channel = ch; // channel to be displayed
     threshold = thres; // cross-correlation threshold
+    //scale_auto = true; // auto colorbar
+    //scale_min = 2;      // min scale value
+    //scale_max = 6;      // max scale value
 }
 
 void imageAcquisition::startAcquisition()
@@ -71,7 +76,7 @@ void imageAcquisition::startAcquisition()
             if (!seg && !stereomode)
             {
                 //qDebug() << "build monoseg";
-                seg = new Segmentation(frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false);
+                seg = new Segmentation(frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false, scale_auto, ansi);
             }
             if (!seg_stereo && stereomode)
             {
@@ -101,48 +106,33 @@ void imageAcquisition::startAcquisition()
             Mat frame_r;
             Mat frame_l;
 
-
-
             // if in acquisition, do segmentation
             if (inAcquisition)
             {
-                qDebug() << "acq 1";
 
                 // get frame
                 if (!stereomode)
                 {
-                    //frame = cam->getNextFrame();
-                    //qDebug() << "reading";
+
+                    // make sure we have something in readout and reference frame before segmentation
                     if (!ref_frame.empty() && !readout_frame.empty())
                     {
-                        qDebug() << "acq 2";
-                        //qDebug() << "before frames";
                         if (!writing)
                         {
-                            qDebug() << "acq 2a";
-                            ref_frame.copyTo(frame_on);
-                            //frame_on = ref_frame.clone();
-                            qDebug() << "acq 2o";
-                            qDebug() << readout_frame.cols;
-                            qDebug() << "acq1oo";
-                            //frame = readout_frame.clone();
-                            readout_frame.copyTo(frame);
-                            qDebug() << "acq 2b";
-                            frame_off = frame.clone();
-                            qDebug() << "acq 2c";
+                            // using copyTo because clone() is causing crashes
+                            //ref_frame.copyTo(frame_on);
+                            frame_on = ref_frame;
+                            //readout_frame.copyTo(frame_off);
+                            frame_off = readout_frame;
+                            frame = frame_off.clone();
                         }
                         else
                             continue;
-                        //qDebug() << "after frames";
                     }
                     else
                     {
-                        qDebug() << "CONTINUE";
                         continue;
-
                     }
-                    qDebug() << "acq 3";
-                    //qDebug() << "finished reading";
                 }
                 else
                 {
@@ -156,27 +146,30 @@ void imageAcquisition::startAcquisition()
                     frame_r = calib->getRectifiedIm(frame_r,1);
                 }
 
-                qDebug() << "acq 4";
                 // add raw frame to avi export
                 avi_out_raw->addFrame(frame);
-                qDebug() << "acq 5";
                 boost::thread* segmentationThread;
 
                 if (!stereomode)
                 {
-                    qDebug() << "acq 6";
                     // set correlation threshold
                     seg->setThreshold(threshold);
+
                     // detection channel to be displayed
                     seg->switchChannel(channel);
-                    //boost::thread segmentationThread(ThreadWrapper::startSegmentationThread, seg, frame, ch1_tau, ch2_tau, ch3_tau, ch4_tau);
-                    //segmentationThread = new boost::thread;
-                    qDebug() << "acq 7";
+
+                    // set ansi limit
+                    seg->setAnsi(ansi);
+
+                    // set autoscale
+                    seg->setAutoScale(scale_auto);
+                    if (!scale_auto)
+                    {
+                        // if not autoscale, set scale limits
+                        seg->setColorScale(scale_min, scale_max);
+                    }
+
                     segmentationThread = new boost::thread(boost::bind(ThreadWrapper::startSegmentationThread, seg, frame, frame_on, frame_off, ch1_tau, ch2_tau, ch3_tau, ch4_tau));
-                    // wait for thread to end
-                    qDebug() << "acq 8";
-
-
                 }
                 else
                 {
@@ -190,24 +183,40 @@ void imageAcquisition::startAcquisition()
                     //segmentationThread.join();
 
                 }
-                qDebug() << "acq 9";
-                // thread
-                segmentationThread->join();
-                qDebug() << "acq 10";
+
+                // clear lifetimes
+                set_lifetime(NO_LIFETIME,1);
+                set_lifetime(NO_LIFETIME,2);
+                set_lifetime(NO_LIFETIME,3);
+                set_lifetime(NO_LIFETIME,4);
+
                 // add segmented frame to avi export
                 avi_out_augmented->addFrame(frame);
-                qDebug() << "acq 11";
+
+                // thread
+                segmentationThread->join();
+
             }
+
             // show frame
             imshow("Acquisition", frame);
 
-            int k=waitKey(10);
+            // fullscreen
+            setWindowProperty("Acquisition", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
+            // TODO: fix for channel switch!
 
+            // is this necessary?
+            // removing waitkey makes it to crash
+
+
+            int k=waitKey(10);
+            /*
             if (k>=49 && k<=52 && !stereomode)
                 seg->switchChannel(k-48);
             if (k>=48 && k<=52 && stereomode)
                 seg_stereo->switchChannel(k-48);
-
+            */
+            // cleanup
             if (!ctrl)
             {
 
@@ -220,7 +229,7 @@ void imageAcquisition::startAcquisition()
 
                     delete(seg);
                     qDebug() << "invoke mono 2";
-                    seg = new Segmentation(frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false);
+                    seg = new Segmentation(frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false, scale_auto, ansi);
                     // write to textfile missing
                 }
                 else
@@ -367,7 +376,7 @@ void imageAcquisition::captureFrame()
 {
     double thres = 0.0;
     int counter = 0;
-    int counter_2 =0;
+    int counter_2 = 0;
     int nframes = 20;
     std::vector<double> blues(nframes);
     std::vector<cv::Mat> images;
@@ -377,45 +386,44 @@ void imageAcquisition::captureFrame()
         if (inAcquisition)
             {
                 // capture frame and store it in a temporary variable
-
                 cv::Mat temp = cam->getNextFrame();
-                cv::Mat tempcopy = temp.clone();
+
+                //cv::Mat tempcopy = temp.clone();
                 //readout_frame = temp;
 
+                //to lab space and look at channel 2
                 Mat frame_lab;
-                cvtColor(tempcopy, frame_lab, CV_BGR2Lab);
+                cvtColor(temp, frame_lab, CV_BGR2Lab);
                 extractChannel(frame_lab, frame_lab, 2);
 
                 //const char * filenamef1 = "frame_lab.jpg";
                 //cvSaveImage(filenamef1, &(IplImage(frame_lab)));
 
-                cv::Scalar meanblueint;
-                // average intensity of channel
-
+                 // check if object exists
                 if (seg)
                 {
+                    // draw rectangle to look for mean intensity.
+                    // eventually we need a way to lock this, so that the area is the same
+                    // for both frames
                     cv::Rect area(seg->x0, seg->y0, seg->x1, seg->y1);
-                    meanblueint = mean(frame_lab(area));
 
-                    /*
-                    qDebug() << "AREA";
-                    qDebug() << area.x;
-                    qDebug() << area.y;
-                    qDebug() << area.width;
-                    qDebug() << area.height;
-                    */
+                    // average intensity in the 2nd channel
+                    cv::Scalar meanblueint = mean(frame_lab(area));
                     double blueint = meanblueint.val[0];
 
-                    // store blue level in image
+                    // store blue level in vector
                     blues[counter] = blueint;
 
-                    // find min and max
+                    // find min and max in vector
                     double blue_mx = *max_element(std::begin(blues), std::end(blues));
                     double blue_mn = *min_element(std::begin(blues), std::end(blues));
+
+                    // amplitude
                     double span = blue_mx - blue_mn;
 
                     // calculate thrshold to find aiming beam
-                    thres = 0.25 * thres + 0.75 * ((0.5 * span) + blue_mn);
+                    double level = 0.5;
+                    thres = 0.25 * thres + 0.75 * ((level * span) + blue_mn);
 
                     /*
                     qDebug() << "Start";
@@ -427,12 +435,13 @@ void imageAcquisition::captureFrame()
 
                     writing = true;
                     if (blueint < thres - 0.1*span)
-                        ref_frame = tempcopy;
-                    else if (blueint > thres + 0.1*span)
-                        readout_frame = tempcopy;
+                        ref_frame = temp;
+                    else if (blueint > thres + 0.*span)
+                        readout_frame = temp;
                     else
                     {
                         // do nothing
+                        //readout_frame = tempcopy;
                     }
                     writing = false;
 
@@ -445,12 +454,12 @@ void imageAcquisition::captureFrame()
                 else
                 {
                     writing = true;
-                    ref_frame = tempcopy;
-                    readout_frame = tempcopy;
+                    ref_frame = temp;
+                    readout_frame = temp;
                     writing = false;
                 }
 
-                Sleep(10); // let it rest for 10 ms. otherwise it is likely to crash
+                Sleep(5); // let it rest for ~10 ms. otherwise it is likely to crash
             } else {
                 // clear up blue vector
                 std::fill(blues.begin(), blues.end(), 0);
@@ -476,5 +485,25 @@ void imageAcquisition::captureFrame()
     tmp->closeFile();
     qDebug() << "test";
 */
+}
+
+void imageAcquisition::setAutoScale(bool autoscale)
+{
+    scale_auto = autoscale;
+    //if(seg)
+    //    seg->setAutoScale(scale_auto);
+}
+
+void imageAcquisition::setScale(double mn, double mx)
+{
+    scale_max = mx;
+    scale_min = mn;
+    //if(seg)
+    //    seg->setColorScale(mn,mx);
+}
+
+void imageAcquisition::setAnsi(int ansi)
+{
+    this->ansi = ansi;
 }
 

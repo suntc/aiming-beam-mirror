@@ -11,16 +11,16 @@ using namespace cv;
 
 StereoSegmentation::StereoSegmentation(StereoCalibration * sc, cv::Mat frame, cv::Point ROI_point1, cv::Point ROI_point2, bool interp, int ch_number, bool interp_succ)
 {
-    seg = new Segmentation(frame, ROI_point1, ROI_point2, interp, ch_number, interp_succ, sc);
+    seg = new Segmentation(frame, ROI_point1, ROI_point2, interp, ch_number, interp_succ, sc, true); //TODO: pass autoscale here
     this->calib = sc;
 
     Size s = frame.size();
     res_x = s.width;
     res_y = s.height;
-    ch1_overlay = new Overlay(res_x,res_y,2,3);
-    ch2_overlay = new Overlay(res_x,res_y,2,3);
-    ch3_overlay = new Overlay(res_x,res_y,2,3);
-    ch4_overlay = new Overlay(res_x,res_y,2,3);
+    ch1_overlay = new Overlay(res_x,res_y,2,3, 99999); //TODO: Pass ansi limit here
+    ch2_overlay = new Overlay(res_x,res_y,2,3, 99999);
+    ch3_overlay = new Overlay(res_x,res_y,2,3, 99999);
+    ch4_overlay = new Overlay(res_x,res_y,2,3, 99999);
 
     switchChannel(ch_number);
 }
@@ -155,7 +155,7 @@ void StereoSegmentation::startSegmentation(Mat frame_l, Mat frame_r, Mat frame_v
 
             // visualize height
             if (height_profile==NULL)
-                height_profile = new Overlay(seg->res_x,seg->res_y,height-0.5,height+0.5);
+                height_profile = new Overlay(seg->res_x,seg->res_y,height-0.5,height+0.5, 99999);
 
             if (height>height_profile->getUpperBound())
                 height_profile->setNewInterval(height_profile->getLowerBound(),height+0.05);

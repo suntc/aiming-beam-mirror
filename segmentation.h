@@ -9,13 +9,16 @@ class Segmentation
 {
 
 public:
-    Segmentation(cv::Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ);
-    Segmentation(cv::Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ, StereoCalibration * calib);
+    Segmentation(cv::Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ, bool autoscale, int ansi);
+    Segmentation(cv::Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ, StereoCalibration * calib, bool autoscale);
     //~Segmentation();
 
     void startSegmentation(cv::Mat frame, cv::Mat frame_on, cv::Mat frame_off, double lt_ch1, double lt_ch2, double lt_ch3, double lt_ch4);
     void setThreshold(double thres);
     void switchChannel(int channel);
+    void setAutoScale(bool autoscale);
+    void setColorScale(double mn, double mx);
+    void setAnsi(int ansi);
 
     int last_radius;
     vector<int> log_coords_x;
@@ -67,6 +70,9 @@ private:
     int *radius_values;
     static const int no_gaussians = 11; // 14;
 
+    bool scale_auto;
+    double scale_min;
+    double scale_max;
 
     int current_channel;
     int log_coords_x_failed;

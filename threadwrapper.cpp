@@ -4,17 +4,15 @@
 #include "tcp_ip.h"
 #include "imageacquisition.h"
 #include <boost/thread.hpp>
+#include <QDebug>
 
 void ThreadWrapper::startSegmentationThread(Segmentation *seg, cv::Mat frame, cv::Mat frame_on, cv::Mat frame_off, double lt1, double lt2, double lt3, double lt4)
 {
-
     seg->startSegmentation(frame, frame_on, frame_off, lt1, lt2, lt3, lt4);
-
 }
 
 void ThreadWrapper::startStereoSegmentationThread(StereoSegmentation *seg, cv::Mat frame_l, cv::Mat frame_r, cv::Mat frame_vis, double lt1, double lt2, double lt3, double lt4)
 {
-
     seg->startSegmentation(frame_l, frame_r, frame_vis, lt1, lt2, lt3, lt4);
 
 }

@@ -154,7 +154,6 @@ void TCP_IP::read(string *output, int *len, vector<double> *data)
 
     // & identify IRFs (iIRF)
     // % identify fluorescence data (fIRF)
-
     if (strncmp(recvbuf, "&", 1) == 0)  // & signals irf incoming
     {
         int vecSize;    // keep track of size of data, which is encoded as the first data point, following the command key
@@ -191,7 +190,6 @@ void TCP_IP::read(string *output, int *len, vector<double> *data)
         // get data length
         copy(recvbuf + keyLength, recvbuf + start, reinterpret_cast<char*>(&vecSize));
 
-
         // build array of data points
         for (int i = 0; i < vecSize; i++)
         {
@@ -206,7 +204,6 @@ void TCP_IP::read(string *output, int *len, vector<double> *data)
             tempdata.push_back(temp2);
         }
     }
-
     //qDebug() << recvbuf;
     *output = recvbuf;
     *len = status;

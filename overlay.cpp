@@ -10,10 +10,11 @@
 using namespace cv;
 using namespace std;
 
-Overlay::Overlay(int size_x, int size_y, double scale_mn, double scale_mx)
+Overlay::Overlay(int size_x, int size_y, double scale_mn, double scale_mx, int ansi)
 {
     //qDebug() << "overlay mono";
     this->stereo_mode = false;
+    this->ansi = ansi;
     init(size_x, size_y, scale_mn, scale_mx);
 }
 
@@ -90,6 +91,11 @@ Mat Overlay::getAccumulator()
 
 void Overlay::setNewInterval(double mn, double mx)
 {
+    // set scale boundaries
+    // validate colorbar boundaries
+    //scale_max = (scale_max > limit_max) ? limit_max : mx;
+    //scale_min = (scale_min < limit_min) ? limit_min : mn;
+
     scale_max = mx;
     scale_min = mn;
 
@@ -97,15 +103,30 @@ void Overlay::setNewInterval(double mn, double mx)
 
 
     int val0, r2, g2, b2;
+    long accum;
     for (int x=0; x<values.rows; x++)
         for (int y=0; y<values.cols; y++)
         {
             if (values.at<float>(x,y)<=0.01)
                     continue;
             val0 = (int) ( (values.at<float>(x,y)-scale_min)/(scale_max-scale_min)*255 );
-            r2 = (int) (r->at(val0)*255);
-            g2 = (int) (g->at(val0)*255);
-            b2 = (int) (b->at(val0)*255);
+            accum = accumulator.at<unsigned short>(x,y);
+            if (val0<0)
+                val0 = 0;
+            if (val0>255)
+                val0 = 255;
+            if (accum>ansi)
+            {
+                r2 = 2;
+                g2 = 2;
+                b2 = 2;
+            }
+            else
+            {
+                r2 = (int) (r->at(val0)*255);
+                g2 = (int) (g->at(val0)*255);
+                b2 = (int) (b->at(val0)*255);
+            }
             RGBimage.at<Vec3b>(x,y)[0] = b2;
             RGBimage.at<Vec3b>(x,y)[1] = g2;
             RGBimage.at<Vec3b>(x,y)[2] = r2;
@@ -118,6 +139,10 @@ void Overlay::drawCircle(int x, int y, int radius, double val)
     // highly efficient overlay computation :)
 
     //qDebug() << stereo_mode;
+
+    if (val<0)
+        return;
+
     // if stereo is enabled, map back to visual image
     if (stereo_mode)
     {
@@ -164,12 +189,13 @@ void Overlay::drawCircle(int x, int y, int radius, double val)
     segm_acc2.convertTo(acc_post, CV_32F);
     tmp.convertTo(binary_segm, CV_32F);
 
+    //qDebug() << "before update";
     // update values
     Mat const_one(binary_segm.size(), CV_32F, Scalar::all(1));
     Mat tmp1 = (segm_val.mul(acc_pre) + binary_segm*val ); //binary_segm.mul
             //+ (segm_val.mul(const_one-binary_segm)); //*segm_val
 
-
+    //qDebug() << "after update";
     try
     {
         divide(tmp1, acc_post, tmp1);
@@ -179,12 +205,11 @@ void Overlay::drawCircle(int x, int y, int radius, double val)
         //qDebug() << "Overlay Update Failed!";
         return;
     }
-    if (val<scale_min)
-            return;
 
-    if (val>scale_max)
-            return;
     //tmp1 = binary_segm.mul(tmp1) + segm_val.mul(const_one-binary_segm);
+
+    //const char * filename3 = "acc.jpg";
+    //cvSaveImage(filename3, &(IplImage(accumulator)));
 
     // copy values back to frame and accumulator
     tmp1.copyTo( values( segmArea ) );
@@ -193,14 +218,11 @@ void Overlay::drawCircle(int x, int y, int radius, double val)
     //Mat dst;
     //normalize(values, dst, 0, 1, cv::NORM_MINMAX);
 
-
-
-
-
     // update color image
     Mat rgb_segm = RGBimage(segmArea);
-
+    qDebug() << "before loop";
     int val0, r2, g2, b2;
+    long accum;
     for (int x=0; x<2*radius+1; x++)
     {
 
@@ -209,15 +231,30 @@ void Overlay::drawCircle(int x, int y, int radius, double val)
             if (tmp1.at<float>(x,y)<0.001)
                     continue;
             val0 = (int) ( (tmp1.at<float>(x,y)-scale_min)/(scale_max-scale_min)*255 );
-            r2 = (int) (r->at(val0)*255);
-            g2 = (int) (g->at(val0)*255);
-            b2 = (int) (b->at(val0)*255);
+            accum = acc_post.at<float>(x,y);
+            if (val0<0)
+                val0 = 0;
+            if (val0>255)
+                val0 = 255;
+            if (accum>ansi)
+            {
+                r2 = 2;
+                g2 = 2;
+                b2 = 2;
+            }
+            else
+            {
+                r2 = (int) (r->at(val0)*255);
+                g2 = (int) (g->at(val0)*255);
+                b2 = (int) (b->at(val0)*255);
+            }
             rgb_segm.at<Vec3b>(x,y)[0] = b2;
             rgb_segm.at<Vec3b>(x,y)[1] = g2;
             rgb_segm.at<Vec3b>(x,y)[2] = r2;
         }
 
     }
+    qDebug() << "after loop";
 
 
     //imshow("activeDisplay", RGBimage);
@@ -272,18 +309,22 @@ void Overlay::drawCurrentVal(double val, int channel)
     int r0, g0, b0;
     int r1, g1, b1;
 
-    if (val>=scale_min && val<=scale_max)
-    {
+    //if (val>=scale_min && val<=scale_max)
+    //{
         int val0 = (int) ( (val-scale_min)/(scale_max-scale_min)*255);
+        if (val0<0)
+            val0 = 0;
+        if (val0>255)
+            val0 = 255;
 
         r0 = (int) (r->at(val0)*255);
         g0 = (int) (g->at(val0)*255);
         b0 = (int) (b->at(val0)*255);
-    }
-    else
-    {
-        r0 = 0; g0 = 0; b0 = 0;
-    }
+    //}
+    //else
+    //{
+    //    r0 = 0; g0 = 0; b0 = 0;
+    //}
 
     if (r0+g0+b0>383)
     {
@@ -297,7 +338,11 @@ void Overlay::drawCurrentVal(double val, int channel)
 
     rectangle(RGBimage, Point(x_from,y_from), Point(x_to, y_to), Scalar(b0,g0,r0), cv::FILLED, 8, 0);
     char str[10];
-    sprintf(str,"%2.2f",val);
+    if (val>0)
+        sprintf(str,"%2.2f",val);
+    else
+        sprintf(str, "nan");
+
     putText(RGBimage, str, Point2f(x_from+10,y_to-8), fontFace, fontScale,  Scalar(b1,g1,r1,255),thickness);
     char str1[10];
     if (channel>0)
@@ -314,3 +359,11 @@ double Overlay::getValue(int x, int y)
     double val = values.at<float>(y,x);
     return val;
 }
+
+void Overlay::setAnsi(int ansi)
+{
+    this->ansi = ansi;
+    setNewInterval(scale_min,scale_max);
+}
+
+

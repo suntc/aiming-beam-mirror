@@ -16,11 +16,12 @@
 using namespace cv;
 using namespace std;
 
-Segmentation::Segmentation(Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ, StereoCalibration* calib)
+Segmentation::Segmentation(Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ, StereoCalibration* calib, bool autoscale)
 {
     Size s = frame.size();
     res_x = s.width;
     res_y = s.height;
+    this->scale_auto=autoscale;
     //ch1_overlay = new Overlay(res_x,res_y,2,3);
     //ch2_overlay = new Overlay(res_x,res_y,2,3);
     //ch3_overlay = new Overlay(res_x,res_y,2,3);
@@ -30,15 +31,16 @@ Segmentation::Segmentation(Mat frame, cv::Point point1, cv::Point point2, bool i
     init(frame, point1, point2, interp, ch_number, interp_succ);
 }
 
-Segmentation::Segmentation(Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ)
+Segmentation::Segmentation(Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ, bool autoscale, int ansi)
 {
     Size s = frame.size();
     res_x = s.width;
     res_y = s.height;
-    ch1_overlay = new Overlay(res_x,res_y,2,3);
-    ch2_overlay = new Overlay(res_x,res_y,2,3);
-    ch3_overlay = new Overlay(res_x,res_y,2,3);
-    ch4_overlay = new Overlay(res_x,res_y,2,3);
+    this->scale_auto=autoscale;
+    ch1_overlay = new Overlay(res_x,res_y,2,3, ansi);
+    ch2_overlay = new Overlay(res_x,res_y,2,3, ansi);
+    ch3_overlay = new Overlay(res_x,res_y,2,3, ansi);
+    ch4_overlay = new Overlay(res_x,res_y,2,3, ansi);
     stereo_setup = false;
 
     // the pointer overlay points to the overlay that is currently displayed
@@ -68,6 +70,28 @@ void Segmentation::switchChannel(int channel)
         overlay=ch4_overlay;
         break;
     }
+}
+
+void Segmentation::setAutoScale(bool autoscale)
+{
+    scale_auto = autoscale;
+}
+
+void Segmentation::setAnsi(int ansi)
+{
+    ch1_overlay->setAnsi(ansi);
+    ch2_overlay->setAnsi(ansi);
+    ch3_overlay->setAnsi(ansi);
+    ch4_overlay->setAnsi(ansi);
+}
+
+void Segmentation::setColorScale(double mn, double mx)
+{
+    // set interval for all channels
+    ch1_overlay->setNewInterval(mn, mx);
+    ch2_overlay->setNewInterval(mn, mx);
+    ch3_overlay->setNewInterval(mn, mx);
+    ch4_overlay->setNewInterval(mn, mx);
 }
 
 
@@ -199,14 +223,11 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
     if (!stereo_setup)
         overlay->drawCurrentVal(lifetime, current_channel);
 
-
     frame_no++;
-
 
     Mat frame_diff = frame.clone();
     if (subtract_first_frame)
     {
-        qDebug() << "subtract";
         frame_diff=frame-firstFrame;
     }
 
@@ -218,9 +239,8 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
 
     //    overlay = new Overlay(res_x,res_y,lower_lim,ceil(lifetime+0.5)); //1-8
     //}
-    if(!stereo_setup)
+    if(!stereo_setup && scale_auto)
     {
-
         if (lt_ch1>0)
         {
             if (lt_ch1>ch1_overlay->getUpperBound())
@@ -329,28 +349,18 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
             int xto   = (last_x+area_dim > ROI_right_lower.x) ? ROI_right_lower.x : last_x+area_dim;
             int yto   = (last_y+area_dim > ROI_right_lower.y) ? ROI_right_lower.y : last_y+area_dim;
 
-            xfrom = 300;
-            yfrom = 300;
-            xto = 700;
-            yto = 700;
             Rect corrArea(xfrom, yfrom, xto-xfrom, yto-yfrom);
 
-            //x0 = xfrom;
-            //y0 = yfrom;
-            //x1 = xto-xfrom;
-            //y1 = yto-yfrom;
             x0 = xfrom;
             y0 = yfrom;
             x1 = xto-xfrom;
             y1 = yto-yfrom;
-
 
             Mat frame_cut = frame_diff(corrArea);
 
             //correlation = doubleRingSegmentation(frame_cut, x, y, radius);
             correlation = pulsedSegmentation(frame_on, frame_off, corrArea, x, y, radius);
 
-            qDebug() << correlation;
             int x_n=last_x; int y_n=last_y;
             if (correlation > thres)
             {
@@ -358,15 +368,21 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
                 y = y+yfrom-1;
                 x_n = x; y_n = y;
             }
+            else
+            {
+                x = last_x;
+                y = last_y;
+            }
         }
     }
     //char str[10];
     //sprintf(str,"%f",correlation); // %f correlation
     if (correlation > thres)
     {
-
         if (log_lifetime_failed.size()>2 && segmentation_initialized==1 && segmentation_selection)
         {
+
+
             int dx = x-log_coords_x_failed;
             int dy = y-log_coords_y_failed;
             int dr = radius-log_radius_failed;
@@ -385,12 +401,11 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
             }
             log_lifetime_failed.clear();
         }
+
         segmentation_initialized=1;
         log_lifetime_failed.clear();
 
         last_vanish++;
-
-
 
         Point pt;
         pt.x = x;
@@ -428,6 +443,7 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
                 }
             }
         }
+
         if (!stereo_setup)
         {
             ch1_overlay->drawCircle(x,y,radius*0.5,lt_ch1);
@@ -435,6 +451,7 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
             ch3_overlay->drawCircle(x,y,radius*0.5,lt_ch3);
             ch4_overlay->drawCircle(x,y,radius*0.5,lt_ch4);
         }
+
 
         //putText(frame, str, Point2f(100,100), FONT_HERSHEY_PLAIN, 2,  Scalar(255,0,0,255));
 
@@ -450,7 +467,6 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
             log_coords_x.push_back(x);
             log_coords_y.push_back(y);
         //}
-
 
         log_radius.push_back(radius);
         last_found = 1;
@@ -486,20 +502,24 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
         last_active=false;
     }
 
-
-
-    //imshow("activeDisplay", frame);
-    //frame = overlay->RGBimage;
-    //frame.at<uchar>(x,y)[1]=128;
-
     float alpha = 0.5;
     float beta = 0.5;
     if (!stereo_setup)
         addWeighted( frame, alpha, overlay->mergeOverlay(frame), beta, 0.0, frame);
 
     if (show_marker==true)
-        ellipse(frame, Point(x,y), Size(5,5), 0, 0, 360, Scalar( 0, 0, 0 ), 3, 8, 0);
+    {
 
+        // enhance contrast between marker and background
+        if (frame.at<Vec3b>(y,x)[0]+frame.at<Vec3b>(y,x)[1]+frame.at<Vec3b>(y,x)[2]>383)
+        {
+            ellipse(frame, Point(x,y), Size(5,5), 0, 0, 360, Scalar( 0, 0, 0 ), 3, 8, 0);
+        }
+        else
+        {
+            ellipse(frame, Point(x,y), Size(5,5), 0, 0, 360, Scalar( 255, 255, 255 ), 3, 8, 0);
+        }
+    }
     //char str[10];
     //sprintf(str,"%f",lifetime);
     //putText(frame, str, Point2f(200,200), FONT_HERSHEY_PLAIN, 2,  Scalar(0,255,0,255));
@@ -1092,15 +1112,25 @@ float Segmentation::doubleRingSegmentation(cv::Mat frame, int &x, int &y, int &r
 
 float Segmentation::pulsedSegmentation(cv::Mat frame_on, cv::Mat frame_off, Rect corrArea, int &x, int &y, int &radius)
 {
-    qDebug() << "flag 1";
+
     Mat lab_on, lab_off;
+
+    qDebug() << "seg 1";
     // convert to lab space
+    qDebug() << frame_on.cols;
+    //const char * filename2 = "frameon.jpg";
+    //cvSaveImage(filename2, &(IplImage(frame_on)));
+    qDebug() << frame_on.cols;
     cvtColor(frame_on, lab_on, CV_BGR2Lab);
+    qDebug() << "seg 1a";
     extractChannel (lab_on, lab_on, 2 );
+    qDebug() << frame_off.cols;
+    qDebug() << "seg 1b";
     cvtColor(frame_off, lab_off, CV_BGR2Lab);
+    qDebug() << "seg 1c";
     extractChannel (lab_off, lab_off, 2 );
 
-    qDebug() << "flag 2";
+    qDebug() << "seg 2";
     //const char * filename2 = "frameon.jpg";
     //cvSaveImage(filename2, &(IplImage(lab_on(corrArea))));
 
@@ -1110,35 +1140,35 @@ float Segmentation::pulsedSegmentation(cv::Mat frame_on, cv::Mat frame_off, Rect
     // compute difference between frames
     Mat img_diff;
     img_diff = abs(lab_on(corrArea) - lab_off(corrArea));
-    qDebug() << "flag 3";
+    qDebug() << "seg 3";
     //const char * filename3 = "framediff.jpg";
     //cvSaveImage(filename3, &(IplImage(img_diff)));
+
 
     int thres = 40; //40; //255; //255; // Hue max
     threshold(img_diff, img_diff, thres, 255, THRESH_BINARY);
-    qDebug() << "flag 4";
-
+    qDebug() << "seg 4";
     // Floodfill from point (0, 0)
     Mat im_floodfill = img_diff.clone();
     floodFill(im_floodfill, cv::Point(0,0), Scalar(255));
-    qDebug() << "flag 5";
+    qDebug() << "seg 5";
     // Invert floodfilled image
     Mat im_floodfill_inv;
     bitwise_not(im_floodfill, im_floodfill_inv);
-    qDebug() << "flag 6";
+    qDebug() << "seg 6";
     // Combine the two images to get the foreground.
     Mat im_out = (img_diff | im_floodfill_inv);
-    img_diff = im_out;
-    qDebug() << "flag 7";
+    img_diff = im_out.clone(); //TODO: remove clone
+    qDebug() << "seg 7";
     //const char * filename3 = "framediff.jpg";
     //cvSaveImage(filename3, &(IplImage(img_diff)));
-    qDebug() << "flag 8";
+
     Mat element = getStructuringElement(MORPH_ELLIPSE, Size(2*struct_size1 + 1, 2*struct_size1 + 1),Point(-1, -1)); // Creat structured element of size 3
     morphologyEx(img_diff, img_diff, MORPH_ERODE, element);
-    qDebug() << "flag 9";
+    qDebug() << "seg 8";
     vector<vector<Point> > contours;
     findContours(img_diff, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
-    qDebug() << "flag 10";
+    qDebug() << "seg 9";
     int size_max=0;
     int ind=0;
     for(int i = 0; i < (int)contours.size(); i++) // For all the contours
@@ -1151,16 +1181,35 @@ float Segmentation::pulsedSegmentation(cv::Mat frame_on, cv::Mat frame_off, Rect
         }
     }
 
-    qDebug() << "flag 11";
+    qDebug() << "seg 10";
     if(contours.size()==0 || size_max<5)
         return 0;
 
-    qDebug() << "flag 12";
+    qDebug() << "seg 11";
     RotatedRect fittedEllipse = fitEllipse(Mat(contours[ind]));
     radius = ( fittedEllipse.size.height+fittedEllipse.size.width ) / 2; //2
     x = fittedEllipse.center.x;
     y = fittedEllipse.center.y;
-    qDebug() << "flag 13";
+
+    if( x<0 | y<0 | x>corrArea.width | y>corrArea.height | radius>res_y/10)
+    {
+        /*
+        const char * filename3 = "wrongfitting.jpg";
+        cvSaveImage(filename3, &(IplImage(img_diff)));
+
+        const char * filename4 = "wrongfitting2.jpg";
+        cvSaveImage(filename4, &(IplImage(im_out)));
+
+        const char * filename2 = "frameon.jpg";
+        cvSaveImage(filename2, &(IplImage(lab_on(corrArea))));
+
+        const char * filename1 = "frameoff.jpg";
+        cvSaveImage(filename1, &(IplImage(lab_off(corrArea))));
+        */
+        return 0;
+    }
+    if (radius< 15)
+        radius = 15;
 
     return 1;
 

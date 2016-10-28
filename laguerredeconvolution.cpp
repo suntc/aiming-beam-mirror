@@ -62,7 +62,6 @@ LaguerreDeconvolution::LaguerreDeconvolution(vector<double> iIRF_CH1, vector<dou
 
 double LaguerreDeconvolution::getLifetime(vector<double> fIRF, int channel)
 {
-
     double lifetime;
     if (isnan(fIRF.at(0)))
     {

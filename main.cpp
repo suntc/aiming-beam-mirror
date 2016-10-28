@@ -100,6 +100,7 @@ void startup(GUIupdater *ui)
 
     // initialise application mode
     int mode = OFFLINE;
+    int previous_mode = -2;
     ui->setMode(mode);
 
     // initialize image acquisition object (this is for the exvivo camera only. may need to be changed in the future)
@@ -341,6 +342,8 @@ void startup(GUIupdater *ui)
             else if (key.compare("!autocolor") == 0)
             {
                 lt_auto = (value.compare("1") == 0) ? true : false;
+
+                acq->setAutoScale(lt_auto);
                 conn.write(set_ack(key, value));
             }
 
@@ -358,6 +361,8 @@ void startup(GUIupdater *ui)
 
                     // get max lifetime
                     lt_max = stoi(value.substr(s + 1, value.length() - f + 1));
+
+                    acq->setScale(lt_min, lt_max);
 
                 }
 
@@ -382,7 +387,10 @@ void startup(GUIupdater *ui)
             else if (key.compare("!ansi") == 0)
             {
                 ansi = stoi(value);
+                acq->setAnsi(ansi);
                 conn.write(set_ack(key, value));
+
+
             }
 
             // correlation threshold
@@ -573,7 +581,6 @@ void startup(GUIupdater *ui)
                 // something unexpected was received. Are we still connected?
                 if (!init)
                 {
-                    qDebug() << "being alive is good...";
 
                     // make sure we are still connected
                     conn.write("alive\r\n");
@@ -598,7 +605,6 @@ void startup(GUIupdater *ui)
 
             //if(stereomode==true && acq->stereomode==false)
             //    acq->set_mode(true);
-
             // set acquisition loop condition
             acq->inAcquisition = acquire;   // differentiate between focusing and acquisition
             acq->ctrl = focus || acquire;
@@ -611,7 +617,10 @@ void startup(GUIupdater *ui)
                             ((invivo) ? ACQUISITION_INVIVO : ACQUISITION_EXVIVO)
                           :
                             STANDBY;
-            ui->setMode(mode);
+            if (mode != previous_mode)
+                ui->setMode(mode);
+
+            previous_mode = mode;
 
             // do deconvolution
             //if (data_ch1_ready && data_ch2_ready && data_ch3_ready && data_ch4_ready)
@@ -620,10 +629,10 @@ void startup(GUIupdater *ui)
             //    lifetimes = decon->getLifetimes(data_CH1,data_CH2,data_CH3,data_CH4,0);
             //    qDebug() << lifetimes[2];
             //}
-
             readingThread.join();
 
         }
+
 
         // make sure the thread is not working forever
         acq->thread = false;

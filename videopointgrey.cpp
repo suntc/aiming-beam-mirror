@@ -58,8 +58,7 @@ VideoPointGrey::VideoPointGrey()
         return;
     }
 
-    //cam.SetVideoModeAndFrameRate(FlyCapture2::VIDEOMODE_1280x960RGB, FlyCapture2::FRAMERATE_120 );
-
+    cam.SetVideoModeAndFrameRate(FlyCapture2::VIDEOMODE_1280x960RGB, FlyCapture2::FRAMERATE_120 );
 
     connected = true;
 
@@ -77,7 +76,8 @@ cv::Mat VideoPointGrey::getNextFrame( )
 
     if ( error != PGRERROR_OK )
     {
-        std::cout << "capture error" << std::endl;
+        //std::cout << "capture error" << std::endl;
+        qDebug() << "should never go here";
         exit(-1);
     }
 
@@ -87,6 +87,7 @@ cv::Mat VideoPointGrey::getNextFrame( )
     // convert to OpenCV Mat
     unsigned int rowBytes = (double)rgbImage.GetReceivedDataSize()/(double)rgbImage.GetRows();
     cv::Mat image = cv::Mat(rgbImage.GetRows(), rgbImage.GetCols(), CV_8UC3, rgbImage.GetData(),rowBytes);
+
     //qDebug() << width;
     //qDebug() << height;
     //cv::Mat image = cv::Mat(height, width, CV_8UC3, rgbImage.GetData(),rowBytes);
