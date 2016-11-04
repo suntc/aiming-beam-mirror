@@ -37,10 +37,10 @@ Segmentation::Segmentation(Mat frame, cv::Point point1, cv::Point point2, bool i
     res_x = s.width;
     res_y = s.height;
     this->scale_auto=autoscale;
-    ch1_overlay = new Overlay(res_x,res_y,2,3, ansi);
-    ch2_overlay = new Overlay(res_x,res_y,2,3, ansi);
-    ch3_overlay = new Overlay(res_x,res_y,2,3, ansi);
-    ch4_overlay = new Overlay(res_x,res_y,2,3, ansi);
+    ch1_overlay = new Overlay(res_x,res_y,1,6, ansi);
+    ch2_overlay = new Overlay(res_x,res_y,1,6, ansi);
+    ch3_overlay = new Overlay(res_x,res_y,1,6, ansi);
+    ch4_overlay = new Overlay(res_x,res_y,1,6, ansi);
     stereo_setup = false;
 
     // the pointer overlay points to the overlay that is currently displayed
@@ -198,6 +198,7 @@ void Segmentation::init(Mat frame, cv::Point point1, cv::Point point2, bool inte
 
 void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, double lt_ch1, double lt_ch2, double lt_ch3, double lt_ch4)
 {
+
     if (!firstFrameSet)
     {
         firstFrame = frame.clone();
@@ -220,6 +221,7 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
         lifetime=lt_ch4;
         break;
     }
+
     if (!stereo_setup)
         overlay->drawCurrentVal(lifetime, current_channel);
 
@@ -230,7 +232,6 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
     {
         frame_diff=frame-firstFrame;
     }
-
     //if ( overlay == NULL && lifetime>0)
     //{
     //    double lower_lim = floor(lifetime-0.5);
@@ -239,41 +240,7 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
 
     //    overlay = new Overlay(res_x,res_y,lower_lim,ceil(lifetime+0.5)); //1-8
     //}
-    if(!stereo_setup && scale_auto)
-    {
-        if (lt_ch1>0)
-        {
-            if (lt_ch1>ch1_overlay->getUpperBound())
-                ch1_overlay->setNewInterval(ch1_overlay->getLowerBound(),ceil(lt_ch1));
 
-            if (lt_ch1<ch1_overlay->getLowerBound() && lt_ch1>0)
-                ch1_overlay->setNewInterval(floor(lt_ch1),ch1_overlay->getUpperBound());
-        }
-        if (lt_ch2>0)
-        {
-            if (lt_ch2>ch2_overlay->getUpperBound())
-                ch2_overlay->setNewInterval(ch2_overlay->getLowerBound(),ceil(lt_ch2));
-
-            if (lt_ch2<ch2_overlay->getLowerBound() && lt_ch2>0)
-                ch2_overlay->setNewInterval(floor(lt_ch2),ch2_overlay->getUpperBound());
-        }
-        if (lt_ch3>0)
-        {
-            if (lt_ch3>ch3_overlay->getUpperBound())
-                ch3_overlay->setNewInterval(ch3_overlay->getLowerBound(),ceil(lt_ch3));
-
-            if (lt_ch3<ch3_overlay->getLowerBound() && lt_ch3>0)
-                ch3_overlay->setNewInterval(floor(lt_ch3),ch3_overlay->getUpperBound());
-        }
-        if (lt_ch4>0)
-        {
-            if (lt_ch4>ch4_overlay->getUpperBound())
-                ch4_overlay->setNewInterval(ch4_overlay->getLowerBound(),ceil(lt_ch4));
-
-            if (lt_ch4<ch4_overlay->getLowerBound() && lt_ch4>0)
-                ch4_overlay->setNewInterval(floor(lt_ch4),ch4_overlay->getUpperBound());
-        }
-    }
     //Size s = frame.size();
     //res_x = s.width;
     //res_y = s.height;
@@ -286,6 +253,7 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
     log_frame_no.push_back(frame_no);
     int x, y, radius;
     float correlation;
+
     if (segmentation_method==1)
     {
         if (segmentation_mode==2 && last_found > 4)
@@ -344,6 +312,7 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
         }
         else
         {
+
             int xfrom = (last_x-area_dim < ROI_left_upper.x ) ? ROI_left_upper.x  : last_x-area_dim;
             int yfrom = (last_y-area_dim < ROI_left_upper.y ) ? ROI_left_upper.y  : last_y-area_dim;
             int xto   = (last_x+area_dim > ROI_right_lower.x) ? ROI_right_lower.x : last_x+area_dim;
@@ -379,6 +348,43 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
     //sprintf(str,"%f",correlation); // %f correlation
     if (correlation > thres)
     {
+        if(!stereo_setup && scale_auto)
+        {
+            if (lt_ch1>0)
+            {
+                if (lt_ch1>ch1_overlay->getUpperBound())
+                    ch1_overlay->setNewInterval(ch1_overlay->getLowerBound(),ceil(lt_ch1));
+
+                if (lt_ch1<ch1_overlay->getLowerBound() && lt_ch1>0)
+                    ch1_overlay->setNewInterval(floor(lt_ch1),ch1_overlay->getUpperBound());
+            }
+            if (lt_ch2>0)
+            {
+                if (lt_ch2>ch2_overlay->getUpperBound())
+                    ch2_overlay->setNewInterval(ch2_overlay->getLowerBound(),ceil(lt_ch2));
+
+                if (lt_ch2<ch2_overlay->getLowerBound() && lt_ch2>0)
+                    ch2_overlay->setNewInterval(floor(lt_ch2),ch2_overlay->getUpperBound());
+            }
+            if (lt_ch3>0)
+            {
+                if (lt_ch3>ch3_overlay->getUpperBound())
+                    ch3_overlay->setNewInterval(ch3_overlay->getLowerBound(),ceil(lt_ch3));
+
+                if (lt_ch3<ch3_overlay->getLowerBound() && lt_ch3>0)
+                    ch3_overlay->setNewInterval(floor(lt_ch3),ch3_overlay->getUpperBound());
+            }
+            if (lt_ch4>0)
+            {
+                if (lt_ch4>ch4_overlay->getUpperBound())
+                    ch4_overlay->setNewInterval(ch4_overlay->getLowerBound(),ceil(lt_ch4));
+
+                if (lt_ch4<ch4_overlay->getLowerBound() && lt_ch4>0)
+                    ch4_overlay->setNewInterval(floor(lt_ch4),ch4_overlay->getUpperBound());
+            }
+        }
+
+
         if (log_lifetime_failed.size()>2 && segmentation_initialized==1 && segmentation_selection)
         {
 
@@ -497,19 +503,20 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
         log_radius.push_back(0);
 
 
-
         //putText(frame, str, Point2f(100,100), FONT_HERSHEY_PLAIN, 2,  Scalar(0,0,255,255));
         last_active=false;
     }
 
     float alpha = 0.5;
     float beta = 0.5;
+
     if (!stereo_setup)
         addWeighted( frame, alpha, overlay->mergeOverlay(frame), beta, 0.0, frame);
 
     if (show_marker==true)
     {
-
+        //qDebug() << x;
+        //qDebug() << y;
         // enhance contrast between marker and background
         if (frame.at<Vec3b>(y,x)[0]+frame.at<Vec3b>(y,x)[1]+frame.at<Vec3b>(y,x)[2]>383)
         {
@@ -524,7 +531,7 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
     //sprintf(str,"%f",lifetime);
     //putText(frame, str, Point2f(200,200), FONT_HERSHEY_PLAIN, 2,  Scalar(0,255,0,255));
     //imshow("activeDisplay", dst );
-
+    //qDebug() << "after merge";
     return;
 }
 
@@ -1115,22 +1122,18 @@ float Segmentation::pulsedSegmentation(cv::Mat frame_on, cv::Mat frame_off, Rect
 
     Mat lab_on, lab_off;
 
-    qDebug() << "seg 1";
     // convert to lab space
-    qDebug() << frame_on.cols;
-    //const char * filename2 = "frameon.jpg";
-    //cvSaveImage(filename2, &(IplImage(frame_on)));
-    qDebug() << frame_on.cols;
+    //const char * filename1 = "frameon.jpg";
+    //cvSaveImage(filename1, &(IplImage(frame_on)));
+
     cvtColor(frame_on, lab_on, CV_BGR2Lab);
-    qDebug() << "seg 1a";
     extractChannel (lab_on, lab_on, 2 );
-    qDebug() << frame_off.cols;
-    qDebug() << "seg 1b";
+
+    //const char * filename2 = "frameoff.jpg";
+    //cvSaveImage(filename2, &(IplImage(frame_off)));
     cvtColor(frame_off, lab_off, CV_BGR2Lab);
-    qDebug() << "seg 1c";
     extractChannel (lab_off, lab_off, 2 );
 
-    qDebug() << "seg 2";
     //const char * filename2 = "frameon.jpg";
     //cvSaveImage(filename2, &(IplImage(lab_on(corrArea))));
 
@@ -1140,35 +1143,34 @@ float Segmentation::pulsedSegmentation(cv::Mat frame_on, cv::Mat frame_off, Rect
     // compute difference between frames
     Mat img_diff;
     img_diff = abs(lab_on(corrArea) - lab_off(corrArea));
-    qDebug() << "seg 3";
     //const char * filename3 = "framediff.jpg";
     //cvSaveImage(filename3, &(IplImage(img_diff)));
 
 
-    int thres = 40; //40; //255; //255; // Hue max
+    int thres = 25; //40; //255; //255; // Hue max
     threshold(img_diff, img_diff, thres, 255, THRESH_BINARY);
-    qDebug() << "seg 4";
+
     // Floodfill from point (0, 0)
     Mat im_floodfill = img_diff.clone();
     floodFill(im_floodfill, cv::Point(0,0), Scalar(255));
-    qDebug() << "seg 5";
+
     // Invert floodfilled image
     Mat im_floodfill_inv;
     bitwise_not(im_floodfill, im_floodfill_inv);
-    qDebug() << "seg 6";
+
     // Combine the two images to get the foreground.
     Mat im_out = (img_diff | im_floodfill_inv);
     img_diff = im_out.clone(); //TODO: remove clone
-    qDebug() << "seg 7";
+
     //const char * filename3 = "framediff.jpg";
     //cvSaveImage(filename3, &(IplImage(img_diff)));
 
     Mat element = getStructuringElement(MORPH_ELLIPSE, Size(2*struct_size1 + 1, 2*struct_size1 + 1),Point(-1, -1)); // Creat structured element of size 3
     morphologyEx(img_diff, img_diff, MORPH_ERODE, element);
-    qDebug() << "seg 8";
+
     vector<vector<Point> > contours;
     findContours(img_diff, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
-    qDebug() << "seg 9";
+
     int size_max=0;
     int ind=0;
     for(int i = 0; i < (int)contours.size(); i++) // For all the contours
@@ -1181,11 +1183,9 @@ float Segmentation::pulsedSegmentation(cv::Mat frame_on, cv::Mat frame_off, Rect
         }
     }
 
-    qDebug() << "seg 10";
     if(contours.size()==0 || size_max<5)
         return 0;
 
-    qDebug() << "seg 11";
     RotatedRect fittedEllipse = fitEllipse(Mat(contours[ind]));
     radius = ( fittedEllipse.size.height+fittedEllipse.size.width ) / 2; //2
     x = fittedEllipse.center.x;

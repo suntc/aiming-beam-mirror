@@ -37,13 +37,16 @@ private:
     vector<float> *r;
     vector<float> *g;
     vector<float> *b;
-    double scale_min;
-    double scale_max;
+    double scale_min = 1;
+    double scale_max = 6;
     cv::Mat RGBimage;
     char str_mx1[4];
     char str_mn1[4];
     bool autoscale;
     int ansi = 99999;
+
+    double abs_max = 10;
+    double abs_min = 0;
 
     StereoCalibration * calib;
 };

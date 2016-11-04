@@ -73,6 +73,7 @@ cv::Mat VideoPointGrey::getNextFrame( )
 {
     // Get the image
     error = cam.RetrieveBuffer( &rawImage );
+    //cam.SetTriggerMode();
 
     if ( error != PGRERROR_OK )
     {
@@ -87,6 +88,9 @@ cv::Mat VideoPointGrey::getNextFrame( )
     // convert to OpenCV Mat
     unsigned int rowBytes = (double)rgbImage.GetReceivedDataSize()/(double)rgbImage.GetRows();
     cv::Mat image = cv::Mat(rgbImage.GetRows(), rgbImage.GetCols(), CV_8UC3, rgbImage.GetData(),rowBytes);
+
+    //qDebug() << "image pixel";
+    //qDebug() << image.at<cv::Vec3b>(1000, 1200)[0];
 
     //qDebug() << width;
     //qDebug() << height;

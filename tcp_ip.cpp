@@ -199,11 +199,10 @@ void TCP_IP::read(string *output, int *len, vector<double> *data)
             double temp2;
             temp2 = (double)temp / 1024.0;
 
-            //qDebug() << temp2;
             // save data in a temporary variable
             tempdata.push_back(temp2);
         }
-    }
+   }
     //qDebug() << recvbuf;
     *output = recvbuf;
     *len = status;

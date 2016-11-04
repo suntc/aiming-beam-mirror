@@ -220,9 +220,8 @@ void startup(GUIupdater *ui)
             if (key.compare("disconnect") == 0)
             {
 
-
                 // disconnecting from peer
-                qDebug() << "disconnecting";
+                //qDebug() << "disconnecting";
 
                 // send acknowledgment
                 conn.write("disconnect:1\r\n");
@@ -235,6 +234,8 @@ void startup(GUIupdater *ui)
 
                 // wait so that master can close connection
                 Sleep(500);
+                //qDebug() << "disconnecting";
+
 
                 break;
             }
@@ -585,6 +586,7 @@ void startup(GUIupdater *ui)
                     // make sure we are still connected
                     conn.write("alive\r\n");
 
+
                     if (!conn.isOpen())
                     {
                         //qDebug() << "To disconnect";
@@ -607,7 +609,9 @@ void startup(GUIupdater *ui)
             //    acq->set_mode(true);
             // set acquisition loop condition
             acq->inAcquisition = acquire;   // differentiate between focusing and acquisition
-            acq->ctrl = focus || acquire;
+            acq->inFocus = focus;
+            acq->ctrl = acquire;
+
 
             // check current working mode
             mode = (focus) ?
@@ -619,6 +623,22 @@ void startup(GUIupdater *ui)
                             STANDBY;
             if (mode != previous_mode)
                 ui->setMode(mode);
+
+
+
+            if (mode == STANDBY)
+            {
+                // display green LED image, if ready to start acquisition
+                Mat im = imread("C:/Aiming Beam v2/Release/release/pics/green_light.png", CV_LOAD_IMAGE_COLOR);
+                imshow("Ready", im);
+                //fullscreen. commented for now to facilitate debugging
+                //setWindowProperty("Ready", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
+            }
+            else
+            {
+                destroyWindow("Ready");
+            }
+
 
             previous_mode = mode;
 
@@ -633,9 +653,11 @@ void startup(GUIupdater *ui)
 
         }
 
+        //destroyWindow("Ready");
 
         // make sure the thread is not working forever
         acq->thread = false;
+
         AcquisitionThread.join();
         AcquisitionThread.detach();
 

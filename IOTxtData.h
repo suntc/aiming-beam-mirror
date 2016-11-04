@@ -22,6 +22,7 @@ public:
     static void writeTxtFile(string filename, StereoSegmentation * seg);
     static void writeJpgFile_stereo(string filename, StereoSegmentation * seg, int channel );
     static void writeJpgFile_mono(string filename, Segmentation * seg, int channel );
+    static void writeLogFile(string filename, vector<double> log);
 };
 
 #endif // IOTxtData_H

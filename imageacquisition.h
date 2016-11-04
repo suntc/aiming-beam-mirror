@@ -14,11 +14,13 @@ public:
     cv::Mat frame;
     cv::Mat ref_frame;
     cv::Mat readout_frame;
+    cv::Mat vis_frame;
     cv::Mat frame_on;
     cv::Mat frame_off;
     bool ctrl = false;
     bool thread = false;
     bool inAcquisition = false;
+    bool inFocus = false;
     bool ready = false;
     bool stereomode = false;
     bool aiming_beam_bool = false;
@@ -44,6 +46,11 @@ public:
     void setAutoScale(bool autoscale);
     void setScale(double mn, double mx);
     void setAnsi(int ansi);
+
+    std::vector<double> log_pulse_max;
+    std::vector<double> log_pulse_min;
+    std::vector<double> log_pulse_thres;
+    std::vector<double> log_pulse_cur;
 
 private:
     double ch1_tau;

@@ -12,7 +12,6 @@ using namespace std;
 
 Overlay::Overlay(int size_x, int size_y, double scale_mn, double scale_mx, int ansi)
 {
-    //qDebug() << "overlay mono";
     this->stereo_mode = false;
     this->ansi = ansi;
     init(size_x, size_y, scale_mn, scale_mx);
@@ -43,8 +42,8 @@ void Overlay::init(int size_x, int size_y, double scale_mn, double scale_mx)
     //qDebug() << "def";
 
     // determine interval
-    scale_max = scale_mx;
-    scale_min = scale_mn;
+    this->scale_max = scale_mx;
+    this->scale_min = scale_mn;
 
 
     drawColorBar();
@@ -91,10 +90,15 @@ Mat Overlay::getAccumulator()
 
 void Overlay::setNewInterval(double mn, double mx)
 {
+    //qDebug() << "overlay 1";
     // set scale boundaries
     // validate colorbar boundaries
     //scale_max = (scale_max > limit_max) ? limit_max : mx;
     //scale_min = (scale_min < limit_min) ? limit_min : mn;
+
+    if((mn<abs_min) | (mx>abs_max) | (mn>mx))
+        return;
+
 
     scale_max = mx;
     scale_min = mn;
@@ -220,7 +224,7 @@ void Overlay::drawCircle(int x, int y, int radius, double val)
 
     // update color image
     Mat rgb_segm = RGBimage(segmArea);
-    qDebug() << "before loop";
+    //qDebug() << "before loop";
     int val0, r2, g2, b2;
     long accum;
     for (int x=0; x<2*radius+1; x++)
@@ -254,7 +258,7 @@ void Overlay::drawCircle(int x, int y, int radius, double val)
         }
 
     }
-    qDebug() << "after loop";
+    //qDebug() << "after loop";
 
 
     //imshow("activeDisplay", RGBimage);
@@ -285,6 +289,10 @@ void Overlay::drawColorBar()
             RGBimage.at<Vec3b>(x,y)[1] = g2;
             RGBimage.at<Vec3b>(x,y)[2] = r2;
         }
+
+    //qDebug() << "draw";
+    //qDebug() << scale_min;
+    //qDebug() << scale_max;
 
     sprintf(str_mx1,"%2.2f",scale_max);
     putText(RGBimage, str_mx1, Point2f(x_from-20,y_from-25), FONT_HERSHEY_PLAIN, 2,  Scalar(0,0,255,255), 2);
