@@ -11,6 +11,7 @@ using namespace std;
 std::string IOPath::datapath = "data";
 std::string IOPath::videopath = "videos";
 std::string IOPath::figurepath = "figures";
+std::string IOPath::logpath = "logs";
 std::string IOPath::txtpath = "txt";
 std::string IOPath::counter = "counter.txt";
 
@@ -56,6 +57,11 @@ string IOPath::getDataOutputFilename(string infix, string suffix, string categor
     {
         path.append("\\");
         path.append(figurepath);
+    }
+    if (strcmp(category.c_str(),logpath.c_str())==0)
+    {
+        path.append("\\");
+        path.append(logpath);
     }
     path.append("\\");
     path.append(infix);

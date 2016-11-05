@@ -68,6 +68,7 @@ double LaguerreDeconvolution::getLifetime(vector<double> fIRF, int channel)
     if (isnan(fIRF.at(0)))
     {
         lifetime = fIRF.at(0);
+
     }
     else if (isinf(fIRF.at(0)))
     {
@@ -94,6 +95,7 @@ double LaguerreDeconvolution::getLifetime(vector<double> fIRF, int channel)
         }
     }
     //qDebug() << "deconv 2";
+    //qDebug() << lifetime;
     return lifetime;
 }
 

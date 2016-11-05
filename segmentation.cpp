@@ -330,6 +330,7 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
             //correlation = doubleRingSegmentation(frame_cut, x, y, radius);
             correlation = pulsedSegmentation(frame_on, frame_off, corrArea, x, y, radius);
 
+            //qDebug() << "seg 11a";
             int x_n=last_x; int y_n=last_y;
             if (correlation > thres)
             {
@@ -342,12 +343,14 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
                 x = last_x;
                 y = last_y;
             }
+            //qDebug() << "seg 11b";
         }
     }
     //char str[10];
     //sprintf(str,"%f",correlation); // %f correlation
     if (correlation > thres)
     {
+        //qDebug() << "seg 11c";
         if(!stereo_setup && scale_auto)
         {
             if (lt_ch1>0)
@@ -384,7 +387,7 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
             }
         }
 
-
+        //qDebug() << "seg 11d";
         if (log_lifetime_failed.size()>2 && segmentation_initialized==1 && segmentation_selection)
         {
 
@@ -407,7 +410,7 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
             }
             log_lifetime_failed.clear();
         }
-
+        //qDebug() << "seg 11e";
         segmentation_initialized=1;
         log_lifetime_failed.clear();
 
@@ -419,7 +422,7 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
         //circle(overlay->RGBimage,pt, radius*0.4, (0,0,255), -1);
 
         int loop_counter = 1;
-
+        //qDebug() << "seg 11f";
         if (interpolation_successive_frames==1 && last_found==1 && (last_x-x)*(last_x-x)+(last_y-y)*(last_y-y)>5 )
         {
             int dx = x-last_x;
@@ -449,7 +452,7 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
                 }
             }
         }
-
+        //qDebug() << "seg 11f";
         if (!stereo_setup)
         {
             ch1_overlay->drawCircle(x,y,radius*0.5,lt_ch1);
@@ -457,6 +460,7 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
             ch3_overlay->drawCircle(x,y,radius*0.5,lt_ch3);
             ch4_overlay->drawCircle(x,y,radius*0.5,lt_ch4);
         }
+        //qDebug() << "seg 11g";
 
 
         //putText(frame, str, Point2f(100,100), FONT_HERSHEY_PLAIN, 2,  Scalar(255,0,0,255));
@@ -507,14 +511,16 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
         last_active=false;
     }
 
+    //qDebug() << "seg 11h";
     float alpha = 0.5;
     float beta = 0.5;
 
     if (!stereo_setup)
         addWeighted( frame, alpha, overlay->mergeOverlay(frame), beta, 0.0, frame);
-
+    //qDebug() << "seg 11i";
     if (show_marker==true)
     {
+        //qDebug() << "seg 11l";
         //qDebug() << x;
         //qDebug() << y;
         // enhance contrast between marker and background
@@ -526,7 +532,9 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
         {
             ellipse(frame, Point(x,y), Size(5,5), 0, 0, 360, Scalar( 255, 255, 255 ), 3, 8, 0);
         }
+
     }
+    //qDebug() << "seg 11j";
     //char str[10];
     //sprintf(str,"%f",lifetime);
     //putText(frame, str, Point2f(200,200), FONT_HERSHEY_PLAIN, 2,  Scalar(0,255,0,255));
@@ -1125,15 +1133,15 @@ float Segmentation::pulsedSegmentation(cv::Mat frame_on, cv::Mat frame_off, Rect
     // convert to lab space
     //const char * filename1 = "frameon.jpg";
     //cvSaveImage(filename1, &(IplImage(frame_on)));
-
+    //qDebug() << "seg1";
     cvtColor(frame_on, lab_on, CV_BGR2Lab);
     extractChannel (lab_on, lab_on, 2 );
-
+    //qDebug() << "seg2";
     //const char * filename2 = "frameoff.jpg";
     //cvSaveImage(filename2, &(IplImage(frame_off)));
     cvtColor(frame_off, lab_off, CV_BGR2Lab);
     extractChannel (lab_off, lab_off, 2 );
-
+    //qDebug() << "seg3";
     //const char * filename2 = "frameon.jpg";
     //cvSaveImage(filename2, &(IplImage(lab_on(corrArea))));
 
@@ -1143,33 +1151,38 @@ float Segmentation::pulsedSegmentation(cv::Mat frame_on, cv::Mat frame_off, Rect
     // compute difference between frames
     Mat img_diff;
     img_diff = abs(lab_on(corrArea) - lab_off(corrArea));
+    //qDebug() << "seg4";
     //const char * filename3 = "framediff.jpg";
     //cvSaveImage(filename3, &(IplImage(img_diff)));
 
 
     int thres = 25; //40; //255; //255; // Hue max
     threshold(img_diff, img_diff, thres, 255, THRESH_BINARY);
-
+    //qDebug() << "seg5";
     // Floodfill from point (0, 0)
     Mat im_floodfill = img_diff.clone();
     floodFill(im_floodfill, cv::Point(0,0), Scalar(255));
+    //qDebug() << "seg6";
 
     // Invert floodfilled image
     Mat im_floodfill_inv;
     bitwise_not(im_floodfill, im_floodfill_inv);
+    //qDebug() << "seg7";
 
     // Combine the two images to get the foreground.
     Mat im_out = (img_diff | im_floodfill_inv);
     img_diff = im_out.clone(); //TODO: remove clone
+    //qDebug() << "seg8";
 
     //const char * filename3 = "framediff.jpg";
     //cvSaveImage(filename3, &(IplImage(img_diff)));
 
     Mat element = getStructuringElement(MORPH_ELLIPSE, Size(2*struct_size1 + 1, 2*struct_size1 + 1),Point(-1, -1)); // Creat structured element of size 3
     morphologyEx(img_diff, img_diff, MORPH_ERODE, element);
-
+    //qDebug() << "seg9";
     vector<vector<Point> > contours;
     findContours(img_diff, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
+    //qDebug() << "seg10";
 
     int size_max=0;
     int ind=0;
@@ -1182,15 +1195,16 @@ float Segmentation::pulsedSegmentation(cv::Mat frame_on, cv::Mat frame_off, Rect
             ind = i;
         }
     }
-
+    //qDebug() << "seg11";
     if(contours.size()==0 || size_max<5)
         return 0;
-
+    //qDebug() << "seg12";
     RotatedRect fittedEllipse = fitEllipse(Mat(contours[ind]));
+    //qDebug() << "seg13";
     radius = ( fittedEllipse.size.height+fittedEllipse.size.width ) / 2; //2
     x = fittedEllipse.center.x;
     y = fittedEllipse.center.y;
-
+    //qDebug() << "seg14";
     if( x<0 | y<0 | x>corrArea.width | y>corrArea.height | radius>res_y/10)
     {
         /*
@@ -1208,9 +1222,10 @@ float Segmentation::pulsedSegmentation(cv::Mat frame_on, cv::Mat frame_off, Rect
         */
         return 0;
     }
+    //qDebug() << "seg15";
     if (radius< 15)
         radius = 15;
-
+    //qDebug() << "seg16";
     return 1;
 
 

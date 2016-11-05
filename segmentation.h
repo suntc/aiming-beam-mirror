@@ -19,6 +19,7 @@ public:
     void setAutoScale(bool autoscale);
     void setColorScale(double mn, double mx);
     void setAnsi(int ansi);
+    void setIdx(int idx);
 
     int last_radius;
     vector<int> log_coords_x;
@@ -43,6 +44,7 @@ public:
     int last_x;
     int last_y;
     int last_active;
+    int idx = 0;
 
 
     float thres;

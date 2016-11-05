@@ -16,6 +16,7 @@ private:
     static std::string videopath;
     static std::string txtpath;
     static std::string figurepath;
+    static std::string logpath;
     static std::string counter;
 
 };

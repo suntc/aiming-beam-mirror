@@ -19,6 +19,7 @@
 #include "stereocalibration.h"
 #include "iopath.h"
 
+
 #define OFFLINE -1
 #define STANDBY 0
 #define TEST_EXVIVO 1
@@ -573,7 +574,10 @@ void startup(GUIupdater *ui)
             else if (key.compare("!idx") == 0)
             {
                 idx = stoi(value);
+                acq->setIdx(idx);
                 conn.write(set_ack(key, value));
+
+
             }
 
             else

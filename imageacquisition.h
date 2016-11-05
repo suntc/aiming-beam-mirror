@@ -33,6 +33,7 @@ public:
     VideoInputStereo *stereo_cam;
     void startupCamera(int ch, float thres);
     void shutdownCamera();
+    void setIdx(int idx);
     void set_lifetime(double val, int channel);
     void set_resolution(int w, int h);
     void set_mode(bool stereomode);
@@ -51,6 +52,9 @@ public:
     std::vector<double> log_pulse_min;
     std::vector<double> log_pulse_thres;
     std::vector<double> log_pulse_cur;
+
+    std::vector<double> timer_display;
+    std::vector<double> timer_frames;
 
 private:
     double ch1_tau;
