@@ -85,6 +85,11 @@ void Segmentation::setAnsi(int ansi)
     ch4_overlay->setAnsi(ansi);
 }
 
+void Segmentation::setIdx(int idx)
+{
+    this->idx = idx;
+}
+
 void Segmentation::setColorScale(double mn, double mx)
 {
     // set interval for all channels
@@ -250,7 +255,7 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
     log_lt_ch3.push_back(lt_ch3);
     log_lt_ch4.push_back(lt_ch4);
 
-    log_frame_no.push_back(frame_no);
+    log_frame_no.push_back(idx);
     int x, y, radius;
     float correlation;
 

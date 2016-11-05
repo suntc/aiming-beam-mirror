@@ -271,27 +271,27 @@ void imageAcquisition::startAcquisition()
                     }
 
 
-                    string f = "log_pulse_max"; f.append("_run").append(std::to_string(run_number));
+                    string f = subject; f.append("_log_pulse_max"); f.append("_run").append(std::to_string(run_number));
                     filename = IOPath::getDataOutputFilename(f,"txt","logs");
                     IOTxtData::writeLogFile(filename,log_pulse_max); log_pulse_max.clear();
 
-                    f = "log_pulse_min"; f.append("_run").append(std::to_string(run_number));
+                    f = subject; f.append("_log_pulse_min"); f.append("_run").append(std::to_string(run_number));
                     filename = IOPath::getDataOutputFilename(f,"txt","logs");
                     IOTxtData::writeLogFile(filename,log_pulse_min); log_pulse_min.clear();
 
-                    f = "log_pulse_thres"; f.append("_run").append(std::to_string(run_number));
+                    f = subject; f.append("_log_pulse_thres"); f.append("_run").append(std::to_string(run_number));
                     filename = IOPath::getDataOutputFilename(f,"txt","logs");
                     IOTxtData::writeLogFile(filename,log_pulse_thres); log_pulse_thres.clear();
 
-                    f = "log_pulse_cur"; f.append("_run").append(std::to_string(run_number));
+                    f = subject; f.append("_log_pulse_cur"); f.append("_run").append(std::to_string(run_number));
                     filename = IOPath::getDataOutputFilename(f,"txt","logs");
                     IOTxtData::writeLogFile(filename,log_pulse_cur); log_pulse_cur.clear();
 
-                    f = "timer_frames"; f.append("_run").append(std::to_string(run_number));
+                    f = subject; f.append("_timer_frames"); f.append("_run").append(std::to_string(run_number));
                     filename = IOPath::getDataOutputFilename(f,"txt","logs");
                     IOTxtData::writeLogFile(filename,timer_frames); timer_frames.clear();
 
-                    f = "timer_display"; f.append("_run").append(std::to_string(run_number));
+                    f = subject; f.append("_timer_display"); f.append("_run").append(std::to_string(run_number));
                     filename = IOPath::getDataOutputFilename(f,"txt","logs");
                     IOTxtData::writeLogFile(filename,timer_display); timer_display.clear();
 
@@ -382,7 +382,8 @@ void imageAcquisition::shutdownCamera()
 
 void imageAcquisition::setIdx(int idx)
 {
-    seg->setIdx(idx);
+    if(seg)
+        seg->setIdx(idx);
 }
 
 void imageAcquisition::set_lifetime(double val, int channel)
