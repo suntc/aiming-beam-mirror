@@ -51,6 +51,11 @@ VideoPointGrey::VideoPointGrey()
         PrintError(error);
         return;
     }
+
+    //does not work
+   // error = cam.SetVideoModeAndFrameRate(FlyCapture2::VIDEOMODE_800x600RGB, FlyCapture2::FRAMERATE_120 );
+    //qDebug() << error.GetDescription();
+
     error = cam.StartCapture();
     if ( error == PGRERROR_ISOCH_BANDWIDTH_EXCEEDED )
     {
@@ -58,7 +63,7 @@ VideoPointGrey::VideoPointGrey()
         return;
     }
 
-    cam.SetVideoModeAndFrameRate(FlyCapture2::VIDEOMODE_1280x960RGB, FlyCapture2::FRAMERATE_120 );
+
 
     connected = true;
 
@@ -79,7 +84,9 @@ cv::Mat VideoPointGrey::getNextFrame( )
     {
         //std::cout << "capture error" << std::endl;
         qDebug() << "should never go here";
-        exit(-1);
+        //exit(-1);
+        cv::Mat m;
+        return m.clone();
     }
 
     // convert to rgb

@@ -463,6 +463,13 @@ void imageAcquisition::captureFrame()
             // capture frame and store it in a temporary variable
             Mat temp = cam->getNextFrame();
 
+            // check if there is an image. no image is passed if some parameters are changed through LV - image capture throws an error
+            if (temp.empty())
+            {
+                //qDebug() << "is empty";
+                continue;
+            }
+
             //cv::Mat tempcopy = temp.clone();
             //readout_frame = temp;
 

@@ -61,6 +61,12 @@ private:
     double ch2_tau;
     double ch3_tau;
     double ch4_tau;
+
+    std::vetor<double> ch1_tau_vec;
+    std::vetor<double> ch2_tau_vec;
+    std::vetor<double> ch3_tau_vec;
+    std::vetor<double> ch4_tau_vec;
+
     int width = 852;
     int height = 459;
     std::string infix;
