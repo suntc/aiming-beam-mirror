@@ -22,14 +22,18 @@ public:
     bool inAcquisition = false;
     bool inFocus = false;
     bool ready = false;
+    bool ready_fg = false;
+    bool ready_usb = false;
     bool stereomode = false;
     bool aiming_beam_bool = false;
+    bool invivo = false;
     int channel = 1;
     double threshold = 0.96;
     imageAcquisition(bool stereomode);
     void startAcquisition();
     void captureFrame();
     VideoInput *cam;
+    VideoInput *cam_usb;
     VideoInputStereo *stereo_cam;
     void startupCamera(int ch, float thres);
     void shutdownCamera();
@@ -38,6 +42,9 @@ public:
     void set_resolution(int w, int h);
     void set_mode(bool stereomode);
     void setAimingBeam(bool aiming_beam);
+    void setInVivo(bool invivo);
+    bool getFGReady();
+    bool getUSBReady();
     std::string subject;
     int run_number;
     Segmentation* seg;
@@ -61,11 +68,6 @@ private:
     double ch2_tau;
     double ch3_tau;
     double ch4_tau;
-
-    std::vetor<double> ch1_tau_vec;
-    std::vetor<double> ch2_tau_vec;
-    std::vetor<double> ch3_tau_vec;
-    std::vetor<double> ch4_tau_vec;
 
     int width = 852;
     int height = 459;

@@ -15,7 +15,7 @@ VideoWriter_ab::VideoWriter_ab(string filename,int dim_x,int dim_y)
 {
     //outputVideo.open(file1, -1 , 30 , cv::Size(852, 478)); //8.77678e+08 VideoWriter::fourcc('M','J','P','G')
     qDebug() << filename.c_str();
-    outputVideo.open(filename, CV_FOURCC('F', 'M', 'P', '4') , 30 , cv::Size(dim_x, dim_y), true);
+    outputVideo.open(filename, CV_FOURCC('F', 'M', 'P', '4') , 18 , cv::Size(dim_x, dim_y), true);
     qDebug() << filename.c_str();
     if (!outputVideo.isOpened())
       {

@@ -29,7 +29,8 @@ SOURCES += main.cpp\
     stereosegmentation.cpp \
     stereocalibration.cpp \
     videopointgreystereo.cpp \
-    IOTxtData.cpp
+    IOTxtData.cpp \
+    videoepiphan.cpp
 
 
 INCLUDEPATH += "C:\Opt\Boost\include\boost-1_55"
@@ -62,6 +63,9 @@ LIBS += -LC:\Opt\Boost\lib -llibboost_system-vc120-mt-1_55
 LIBS += -LC:\Opt\Boost\lib -llibboost_filesystem-vc120-mt-1_55
 LIBS += -LC:\Opt\Boost\lib -llibboost_thread-vc120-mt-1_55
 
+# Epiphan
+LIBS += -LC:\Opt\Epiphan\epiphan\bin -frmgrab
+
 LIBS += -lWs2_32
 LIBS += -lMswsock
 
@@ -85,6 +89,7 @@ HEADERS  += mainwindow.h \
     stereocalibration.h \
     videoinputstereo.h \
     videopointgreystereo.h \
-    IOTxtData.h
+    IOTxtData.h \
+    videoepiphan.h
 
 FORMS    += mainwindow.ui

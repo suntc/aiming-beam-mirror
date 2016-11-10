@@ -9,6 +9,7 @@
 #include "iopath.h"
 #include "videowriter_ab.h"
 #include "IOTxtData.h"
+#include "videoepiphan.h"
 #include <ctime>
 
 
@@ -29,9 +30,29 @@ void imageAcquisition::startupCamera(int ch, float thres)
 
     if (stereomode==false)
     {
-        cam = new VideoPointGrey();
+        /*
+        if (invivo) // to frame grabber
+        {
+            cam = new VideoEpiphan();
+        }
+        else    // to USB camera
+        {
+            cam = new VideoPointGrey();
+        }
+
         if (cam->isConnected())
             ready = true;
+        */
+
+        // check USB camera
+        cam_usb = new VideoPointGrey();
+        ready_usb = cam_usb->isConnected();
+
+        // check frame grabber
+        cam = new VideoEpiphan();
+        ready_fg = cam->isConnected();
+
+        ready = ready_fg || ready_usb;
     }
     else
     {
@@ -39,6 +60,7 @@ void imageAcquisition::startupCamera(int ch, float thres)
         if (stereo_cam->isConnected())
             ready = true;
     }
+
     channel = ch; // channel to be displayed
     threshold = thres; // cross-correlation threshold
     //scale_auto = true; // auto colorbar
@@ -54,8 +76,10 @@ void imageAcquisition::startAcquisition()
     if (!stereomode)
     {
         //qDebug() << "getNextFrame";
-        frame = cam->getNextFrame();
-
+        if (invivo)
+            frame = cam->getNextFrame();
+        else
+            frame = cam_usb->getNextFrame();
         //frame = readout_frame;
         //qDebug() << "invoke mono";
         //seg = new Segmentation(frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false);
@@ -191,7 +215,6 @@ void imageAcquisition::startAcquisition()
 
                     //qDebug() << "acq 11";
                     segmentationThread = new boost::thread(boost::bind(ThreadWrapper::startSegmentationThread, seg, frame, frame_on, frame_off, ch1_tau, ch2_tau, ch3_tau, ch4_tau));
-
                 }
                 else
                 {
@@ -201,10 +224,16 @@ void imageAcquisition::startAcquisition()
                     seg_stereo->switchChannel(channel);
                     //boost::thread segmentationThread(ThreadWrapper::startStereoSegmentationThread, seg_stereo, frame_l, frame_r, frame, ch1_tau, ch2_tau, ch3_tau, ch4_tau);
                     segmentationThread = new boost::thread(boost::bind(ThreadWrapper::startStereoSegmentationThread, seg_stereo, frame_l, frame_r, frame, ch1_tau, ch2_tau, ch3_tau, ch4_tau));
+
                     // wait for thread to end
                     //segmentationThread.join();
 
                 }
+                // clear lifetimes
+                set_lifetime(NO_LIFETIME,1);
+                set_lifetime(NO_LIFETIME,2);
+                set_lifetime(NO_LIFETIME,3);
+                set_lifetime(NO_LIFETIME,4);
 
                 // thread
                 segmentationThread->join();
@@ -216,11 +245,7 @@ void imageAcquisition::startAcquisition()
 
                 //qDebug() << "seg a";
 
-                // clear lifetimes
-                set_lifetime(NO_LIFETIME,1);
-                set_lifetime(NO_LIFETIME,2);
-                set_lifetime(NO_LIFETIME,3);
-                set_lifetime(NO_LIFETIME,4);
+
                 //qDebug() << "seg b";
                 // add segmented frame to avi export
                 avi_out_augmented->addFrame(frame);
@@ -360,7 +385,9 @@ void imageAcquisition::startAcquisition()
     if (!stereomode)
     {
         cam->disconnect();
+        cam_usb->disconnect();
         delete(cam);
+        delete(cam_usb);
         delete(seg);
     }
     else
@@ -375,9 +402,24 @@ void imageAcquisition::startAcquisition()
 
 void imageAcquisition::shutdownCamera()
 {
-    stereo_cam->disconnect();
-    //delete(cam);
-    delete(stereo_cam);
+    if (!stereomode)
+    {
+        cam->disconnect();
+        delete(cam);
+
+        cam_usb->disconnect();
+        delete(cam);
+    }
+    else
+    {
+        stereo_cam->disconnect();
+        delete(stereo_cam);
+    }
+}
+
+void imageAcquisition::setInVivo(bool invivo)
+{
+    this->invivo = invivo;
 }
 
 void imageAcquisition::setIdx(int idx)
@@ -461,7 +503,11 @@ void imageAcquisition::captureFrame()
         if (inAcquisition)
         {
             // capture frame and store it in a temporary variable
-            Mat temp = cam->getNextFrame();
+            Mat temp;
+            if (invivo)
+                temp = cam->getNextFrame();
+            else
+                temp = cam_usb->getNextFrame();
 
             // check if there is an image. no image is passed if some parameters are changed through LV - image capture throws an error
             if (temp.empty())
@@ -554,7 +600,7 @@ void imageAcquisition::captureFrame()
                 writing = false;
             }
 
-            Sleep(20); // let it rest for ~10 ms. otherwise it is likely to crash
+            Sleep(1); // let it rest for ~10 ms. otherwise it is likely to crash
         } else {
 
             // clear timer
@@ -568,7 +614,14 @@ void imageAcquisition::captureFrame()
 
             if (inFocus)   // manual focus
             {
-                Mat focus_frame = cam->getNextFrame();
+                Mat focus_frame;
+                if (invivo)
+                    focus_frame = cam->getNextFrame();
+                else
+                    focus_frame = cam_usb->getNextFrame();
+
+
+
                 imshow("Focus", focus_frame);
                 // fullscreen
                 setWindowProperty("Focus", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
@@ -618,5 +671,15 @@ void imageAcquisition::setScale(double mn, double mx)
 void imageAcquisition::setAnsi(int ansi)
 {
     this->ansi = ansi;
+}
+
+bool imageAcquisition::getUSBReady()
+{
+    return ready_usb;
+}
+
+bool imageAcquisition::getFGReady()
+{
+    return ready_fg;
 }
 

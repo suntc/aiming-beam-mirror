@@ -27,15 +27,6 @@
 #define ACQUISITION_EXVIVO 3
 #define ACQUISITION_INVIVO 4
 
-#define STARTUP 0
-#define INIT_CAMERA 1
-#define INIT_IRF 2
-#define IDLE 3
-#define BUSY 4
-#define COMPLETE 5
-#define SERROR 6
-#define ABORT 7
-
 #define TERMINATOR "\r\n"
 #define SEPARATOR ":"
 
@@ -108,30 +99,51 @@ void startup(GUIupdater *ui)
     imageAcquisition *acq = new imageAcquisition(stereomode);
     StereoCalibration *calib;
 
+    // check for USB camera
+    if (!acq->getUSBReady())
+    {
+        ui->throwError("USB camera not detected");
+    }
+
+    // check for Fragme grabber
+    if (!acq->getFGReady())
+    {
+        ui->throwError("Frame grabber not detected");
+    }
+
     while (!acq->ready)
     {
-        ui->throwError("Camera not detected");
+        // message to user
+        ui->throwError("Unable to detect cameras. Waiting...");
 
         // acknowledge error
         ui->setError(true);
 
         // shutdown camera and cleanup
-        acq->shutdownCamera();
+        //acq->shutdownCamera();
 
         // wait
         Sleep(1000);
 
         // reconnect to camera
         acq->startupCamera(channel, threshold);
-
-
-
     }
 
     // camera is up and running. define default resolution
-    acq->set_resolution(width, height);
+    //acq->set_resolution(width, height);
 
     ui->setError(false);
+
+    if (acq->getUSBReady())
+    {
+        ui->throwError("USB camera OK");
+    }
+
+    // check for Fragme grabber
+    if (acq->getFGReady())
+    {
+        ui->throwError("Frame grabber OK");
+    }
 
     // initialize TCP/IP communication
     TCP_IP conn (ip, port);
@@ -171,10 +183,10 @@ void startup(GUIupdater *ui)
         LaguerreDeconvolution *decon = NULL;
 
         int idx = 0;
-        double ch1_tau = 0.0;
-        double ch2_tau = 0.0;
-        double ch3_tau = 0.0;
-        double ch4_tau = 0.0;
+        //double ch1_tau = 0.0;
+        //double ch2_tau = 0.0;
+        //double ch3_tau = 0.0;
+        //double ch4_tau = 0.0;
 
         acq->thread = true; // control acquisition thread
 
@@ -318,6 +330,24 @@ void startup(GUIupdater *ui)
 
                 // aiming beam correction?
                 invivo = (value.compare("1") == 0) ? true : false;
+
+                // set in vivo state;
+                // if true, to frame grabber
+                // if false, to external usb camera
+                acq->setInVivo(invivo);
+
+                if (invivo)
+                {
+                    // check if frame grabber is ready
+                    value = acq->getFGReady() ? "1" : "0";
+                }
+                else
+                {
+                    // check if camera is ready
+                    value = acq->getUSBReady() ? "1" : "0";
+
+                }
+
                 conn.write(set_ack(key, value));
 
             }
