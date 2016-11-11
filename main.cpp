@@ -19,7 +19,7 @@
 #include "stereocalibration.h"
 #include "iopath.h"
 
-
+// Set of definitions for the state
 #define OFFLINE -1
 #define STANDBY 0
 #define TEST_EXVIVO 1
@@ -27,6 +27,7 @@
 #define ACQUISITION_EXVIVO 3
 #define ACQUISITION_INVIVO 4
 
+// TCP IP comm
 #define TERMINATOR "\r\n"
 #define SEPARATOR ":"
 
@@ -34,6 +35,13 @@ using namespace std;
 using namespace boost::filesystem;
 using namespace cv;
 
+/**
+ * @brief buildWriteCmd
+ * @param cmd
+ * @param value
+ *
+ * Build command to be written to TCP IP, based on value (integer)
+ */
 void buildWriteCmd(char cmd[], int value)
 {
 
@@ -44,6 +52,15 @@ void buildWriteCmd(char cmd[], int value)
     // concatenate cmd & val & \r\n (for comm)
     strcat(cmd, strcat(valueToStr, "\r\n"));
 }
+
+/**
+ * @brief set_ack
+ * @param key
+ * @param value
+ * @return _cmd: full command
+ *
+ * Build acknowledge command to be sent to LV
+ */
 
 char* set_ack (string key, string value)
 {
@@ -80,15 +97,15 @@ void startup(GUIupdater *ui)
     int lt_max = 6;     // max limit
     int channel = 2;    // channel to be displayed
     int ansi = 5;       // ansi limit, as the maximum number of frames that a single pixel can be imaged
+
+    // Unused variables in the processing, but called in the code. Keep them for now
     float threshold = 0.96;    // cross-correlation threshold
     int width = 852;    // display width (number of columns)
     int height = 479;   // display height (number of rows)
 
-
     // image acquisition settings
     bool focus = false;     // if true, manual focus is on and camera is streaming
     bool acquire = false;   // if true, enter in acquisition mode
-
 
     // initialise application mode
     int mode = OFFLINE;
@@ -111,6 +128,7 @@ void startup(GUIupdater *ui)
         ui->throwError("Frame grabber not detected");
     }
 
+    // If none of the cameras are detected
     while (!acq->ready)
     {
         // message to user
@@ -125,15 +143,17 @@ void startup(GUIupdater *ui)
         // wait
         Sleep(1000);
 
-        // reconnect to camera
+        // try to reconnect to camera
         acq->startupCamera(channel, threshold);
     }
+
+    // at least one camera was detected. No error to be displayed
+    ui->setError(false);
 
     // camera is up and running. define default resolution
     //acq->set_resolution(width, height);
 
-    ui->setError(false);
-
+    // Check if USB camera is ready
     if (acq->getUSBReady())
     {
         ui->throwError("USB camera OK");
@@ -145,12 +165,12 @@ void startup(GUIupdater *ui)
         ui->throwError("Frame grabber OK");
     }
 
-    // initialize TCP/IP communication
+    // initialize TCP/IP communication. It will wait here until the communication is established
     TCP_IP conn (ip, port);
 
-    // make sure we are alive
+    // make sure we are alive. Let LV be aware of that
     conn.write("alive\r\n");
-    //qDebug() << "hier3";
+
     // check connection
     if (conn.isOpen()){
 
@@ -178,10 +198,11 @@ void startup(GUIupdater *ui)
         vector<double> data_CH4;
         vector<double> tempdata;
 
-        bool iIRFs_initialized=false;
-
+        // control variable to mark initialization of iIRFs
+        bool iIRFs_initialized = false;
         LaguerreDeconvolution *decon = NULL;
 
+        // measurement # within the acquisition
         int idx = 0;
         //double ch1_tau = 0.0;
         //double ch2_tau = 0.0;
@@ -190,8 +211,10 @@ void startup(GUIupdater *ui)
 
         acq->thread = true; // control acquisition thread
 
-        // start acquisition thread, to run indefinitely
+        // start segmentation/acquisition thread, to run indefinitely
         boost::thread AcquisitionThread(ThreadWrapper::StartAcquire, acq);
+
+        // Continuous Frame acquisition thread, also running indefinitely
         boost::thread FrameAcquisition(ThreadWrapper::StartFrameCapture, acq);
 
         while (true){
@@ -201,7 +224,6 @@ void startup(GUIupdater *ui)
             {
                 decon = new LaguerreDeconvolution(iIRF_CH1,iIRF_CH2,iIRF_CH3,iIRF_CH4,time_resolution);
                 iIRFs_initialized = true;
-
             }
 
             // have the read command within a thread, so the communication is always opened
@@ -213,6 +235,7 @@ void startup(GUIupdater *ui)
             // get key and value from output
             size_t f = output.find(":");
 
+            // check if there is any value associated to the key
             if (f != std::string::npos)
             {
                 // get key (string before :)
@@ -248,12 +271,8 @@ void startup(GUIupdater *ui)
                 // wait so that master can close connection
                 Sleep(500);
                 //qDebug() << "disconnecting";
-
-
                 break;
             }
-
-
 
             // setting subject id
             else if (key.compare("!subject") == 0)
@@ -443,7 +462,8 @@ void startup(GUIupdater *ui)
             else if (key.compare("!display_res") == 0)
             {
 
-                if (value.compare("low") == 0) // low res, values are the same as in previous software (unknown reason for such specific w x h)
+                // low res, values are the same as in previous software (unknown reason for such specific w x h)
+                if (value.compare("low") == 0)
                 {
                     width = 852;
                     height = 459;
@@ -467,9 +487,6 @@ void startup(GUIupdater *ui)
                 // set run number
                 run = stoi(value);
                 acq->run_number = run;
-
-                //qDebug() << "RUN";
-                //qDebug() << run;
 
                 // acknowledge tcp connection
                 conn.write(set_ack(key, value));
@@ -496,8 +513,6 @@ void startup(GUIupdater *ui)
 
                 // acknowledge command
                 conn.write(set_ack(key, "1"));
-                //if (calib != nullptr)
-                //    delete(calib);
 
                 acq->set_mode(true);
                 calib = new StereoCalibration(acq->stereo_cam, Size(9,6), 0.25); //0.5
@@ -513,7 +528,9 @@ void startup(GUIupdater *ui)
                     calib->saveCalibration(filename);
                 }
                 else
-                    qDebug() << "not ready";
+                {
+                    ui->throwError("3D calibration not ready");
+                }
             }
 
             // query mode
@@ -658,15 +675,13 @@ void startup(GUIupdater *ui)
             if (mode != previous_mode)
                 ui->setMode(mode);
 
-
-
             if (mode == STANDBY)
             {
                 // display green LED image, if ready to start acquisition
                 Mat im = imread("C:/Aiming Beam v2/Release/release/pics/green_light.png", CV_LOAD_IMAGE_COLOR);
                 imshow("Ready", im);
-                //fullscreen. commented for now to facilitate debugging
-                //setWindowProperty("Ready", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
+                //fullscreen. comment to facilitate debugging
+                setWindowProperty("Ready", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
             }
             else
             {
@@ -675,19 +690,10 @@ void startup(GUIupdater *ui)
 
 
             previous_mode = mode;
-
-            // do deconvolution
-            //if (data_ch1_ready && data_ch2_ready && data_ch3_ready && data_ch4_ready)
-            //{
-            //    vector<double> lifetimes;
-            //    lifetimes = decon->getLifetimes(data_CH1,data_CH2,data_CH3,data_CH4,0);
-            //    qDebug() << lifetimes[2];
-            //}
             readingThread.join();
 
         }
 
-        //destroyWindow("Ready");
 
         // make sure the thread is not working forever
         acq->thread = false;
@@ -703,6 +709,7 @@ void startup(GUIupdater *ui)
     }
 
     // restart the application instead of having a recursive function. this clears up memory as well
+    // threads are not being terminated if program is stopped using the close button (top right)
     qApp->quit();
     QProcess::startDetached(qApp->arguments()[0], qApp->arguments());
     //startup(ui);
@@ -721,11 +728,6 @@ int main(int argc, char *argv[])
     w.ready(false);
     w.error(false);
     w.init();
-
-
-
-
-    // make things working
     // send updater as argument of the thread in order to be able to update the UI from within the thread
     // For some weird reason, QT does not allow the UI to be updated from outside the source class, without using SIGNALS and SLOTS
     boost::thread startupThread(startup, w.updater);

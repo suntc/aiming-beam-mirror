@@ -120,7 +120,7 @@ void StereoSegmentation::startSegmentation(Mat frame_l, Mat frame_r, Mat frame_v
         //cvSaveImage(filename1, &(IplImage(frame_r_cut)));
 
 
-        double correlation = seg->doubleRingSegmentation(frame_r_cut, x, y, radius);
+        double correlation = 0; //seg->doubleRingSegmentation(frame_r_cut, x, y, radius);
 
         qDebug() << lifetime;
         qDebug() << correlation;

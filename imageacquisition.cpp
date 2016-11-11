@@ -492,7 +492,6 @@ void imageAcquisition::captureFrame()
 {
     double thres = 0.0;
     int counter = 0;
-    int counter_2 = 0;
     int nframes = 10;
     std::vector<double> blues(nframes);
     std::vector<cv::Mat> images;
@@ -620,8 +619,6 @@ void imageAcquisition::captureFrame()
                 else
                     focus_frame = cam_usb->getNextFrame();
 
-
-
                 imshow("Focus", focus_frame);
                 // fullscreen
                 setWindowProperty("Focus", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
@@ -635,20 +632,6 @@ void imageAcquisition::captureFrame()
 
 
     }
-/*
-
-    vector<Mat>::iterator it = images.begin();
-    VideoWriter_ab *tmp = new VideoWriter_ab("test.avi",frame.cols,frame.rows);
-
-    while( it != images.end() )
-    {
-        qDebug() << "something";
-        tmp->addFrame(*it);
-        it++;
-    }
-    tmp->closeFile();
-    qDebug() << "test";
-*/
 }
 
 void imageAcquisition::setAutoScale(bool autoscale)

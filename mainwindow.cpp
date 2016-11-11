@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <QDebug>
+#include <QCloseEvent>
+#include <QMessageBox>
 
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -176,6 +178,23 @@ void MainWindow::log(std::string msg)
 {
     ui->log_text->appendPlainText(QString::fromStdString(msg));
 }
+
+void MainWindow::closeEvent (QCloseEvent *event)
+{
+    QMessageBox::StandardButton resBtn = QMessageBox::question( this, "Aiming beam",
+                                                                tr("Are you sure?\n"),
+                                                                QMessageBox::Cancel | QMessageBox::No | QMessageBox::Yes,
+                                                                QMessageBox::Yes);
+    if (resBtn != QMessageBox::Yes) {
+        event->ignore();
+    } else {
+
+        // the program keeps running in the background the windows are shutdown
+        qApp->quit();
+        event->accept();
+    }
+}
+
 
 MainWindow::~MainWindow()
 {
