@@ -38,6 +38,7 @@ public:
     void startupCamera(int ch, float thres);
     void shutdownCamera();
     void setIdx(int idx);
+    void setRadius(double radius);
     void set_lifetime(double val, int channel);
     void set_resolution(int w, int h);
     void set_mode(bool stereomode);
@@ -75,6 +76,7 @@ private:
     bool writing = false;
     double scale_max = 2;
     double scale_min = 3;
+    double radius = 1.0;
     bool scale_auto;
     int ansi = 999999;
 };

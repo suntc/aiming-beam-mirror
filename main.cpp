@@ -100,6 +100,7 @@ void startup(GUIupdater *ui)
 
     // Unused variables in the processing, but called in the code. Keep them for now
     float threshold = 0.96;    // cross-correlation threshold
+    double radius = 1.0;
     int width = 852;    // display width (number of columns)
     int height = 479;   // display height (number of rows)
 
@@ -417,6 +418,20 @@ void startup(GUIupdater *ui)
 
                 }
 
+                conn.write(set_ack(key, value));
+
+            }
+
+            // radius of segmentation
+            else if (key.compare("!radius") == 0)
+            {
+
+                radius = stod(value);
+
+                // set radius
+                acq->setRadius(radius);
+
+                // acknowledgment
                 conn.write(set_ack(key, value));
 
             }

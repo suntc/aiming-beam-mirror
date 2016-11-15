@@ -205,6 +205,9 @@ void imageAcquisition::startAcquisition()
                     // set ansi limit
                     seg->setAnsi(ansi);
 
+                    // scale radius
+                    seg->setRadius(radius);
+
                     // set autoscale
                     seg->setAutoScale(scale_auto);
                     if (!scale_auto)
@@ -427,6 +430,12 @@ void imageAcquisition::setIdx(int idx)
     if(seg)
         seg->setIdx(idx);
 }
+
+void imageAcquisition::setRadius(double radius)
+{
+    this->radius = radius;
+}
+
 
 void imageAcquisition::set_lifetime(double val, int channel)
 {

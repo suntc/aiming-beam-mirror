@@ -20,6 +20,7 @@ public:
     void setColorScale(double mn, double mx);
     void setAnsi(int ansi);
     void setIdx(int idx);
+    void setRadius(double radius);
 
     int last_radius;
     vector<int> log_coords_x;
@@ -84,6 +85,8 @@ private:
 
     cv::Mat frame1;
     cv::Mat frame2;
+
+    double radius_factor = 1.0;
 
     StereoCalibration * calib;
 };
