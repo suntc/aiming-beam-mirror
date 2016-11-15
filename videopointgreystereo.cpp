@@ -113,7 +113,7 @@ cv::Mat VideoPointGreyStereo::getNextFrame( int camID )
     if ( error != PGRERROR_OK )
     {
         std::cout << "capture error" << std::endl;
-        exit(-1);
+        //exit(-1);
     }
     //CameraInfo *ci;
     //cam1.GetCameraInfo(ci);

@@ -19,7 +19,7 @@ VideoWriter_ab::VideoWriter_ab(string filename,int dim_x,int dim_y)
     //qDebug() << filename.c_str();
     if (!outputVideo.isOpened())
       {
-          exit(-1);
+          //exit(-1);
       }
 
 }

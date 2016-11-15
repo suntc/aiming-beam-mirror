@@ -29,7 +29,8 @@ double DeconvolveProcess::Laguerre_alphaval(int LaguerreLength, int &LG_order)
     int rows,cols;
     double my_array[1802][12];
 
-    ifstream pFile ("./AlphaLookup/LG_alpha_vals.txt");
+    //ifstream pFile ("./AlphaLookup/LG_alpha_vals.txt");
+    ifstream pFile("C:/Aiming Beam v2/Release/AlphaLookup/LG_alpha_vals.txt");
     if (pFile.is_open())
     {
         rows = 0;

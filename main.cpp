@@ -688,12 +688,10 @@ void startup(GUIupdater *ui)
                 destroyWindow("Ready");
             }
 
-
             previous_mode = mode;
             readingThread.join();
 
         }
-
 
         // make sure the thread is not working forever
         acq->thread = false;

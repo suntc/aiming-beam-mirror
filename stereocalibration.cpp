@@ -196,7 +196,7 @@ void StereoCalibration::calibrate(const vector<string> imagelist, Size boardSize
                 {
                     qDebug() << "File not Found";
                     qDebug() << filename.c_str();
-                    exit(-1);
+                    //exit(-1);
                 }
 
             if(img.empty())
@@ -698,7 +698,7 @@ Mat StereoCalibration::projectTo3D_(Mat left, Mat right)
         else
         {
             cout<<"Unsupported algorithm";
-            exit(-1);
+            //exit(-1);
         }
 
         // ! [filtering]
@@ -763,7 +763,7 @@ Mat StereoCalibration::projectTo3D_(Mat left, Mat right)
         else
         {
             cout<<"Unsupported algorithm";
-            exit(-1);
+            //exit(-1);
         }
         reprojectImageTo3D(left_disp, XYZ, Q, false, CV_32F);
         //wls_filter->setLambda(lambda);

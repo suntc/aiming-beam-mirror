@@ -1,6 +1,6 @@
 #include "laguerredeconvolution.h"
 #include "deconvolveprocess.h"
-#include <QMessageBox>
+//#include <QMessageBox>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <QDebug>
@@ -28,10 +28,10 @@ LaguerreDeconvolution::LaguerreDeconvolution(vector<double> iIRF_CH1, vector<dou
 
     if (alpha == 0)
     {
-        QMessageBox messageBox;
-        messageBox.critical(0, "Error", "Laguerre lookup table not existent or requested parameters outside the table limits");
-        messageBox.setFixedSize(500, 200);
-        exit(-1);
+        //QMessageBox messageBox;
+        //messageBox.critical(0, "Error", "Laguerre lookup table not existent or requested parameters outside the table limits");
+        //messageBox.setFixedSize(500, 200);
+        //exit(-1);
     }
     deconProc.preMatChannels(iIRF_CH1, deconMatrices_CH1, DataLength, LaguerreOrder, alpha);
     // CH2

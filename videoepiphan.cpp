@@ -1,7 +1,7 @@
 #include "videoepiphan.h"
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-#include <QMessageBox>
+//#include <QMessageBox>
 #include <QDebug>
 
 using namespace cv;
