@@ -3,6 +3,7 @@
 #include "guiupdater.h"
 #include <QMainWindow>
 
+
 // needed to use string as argument in signal-slot thingy
 Q_DECLARE_METATYPE(std::string)
 

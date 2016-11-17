@@ -83,7 +83,7 @@ cv::Mat VideoPointGrey::getNextFrame( )
     if ( error != PGRERROR_OK )
     {
         //std::cout << "capture error" << std::endl;
-        qDebug() << "should never go here";
+        //qDebug() << "should never go here";
         //exit(-1);
         cv::Mat m;
         return m.clone();

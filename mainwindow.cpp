@@ -3,7 +3,8 @@
 #include <QDebug>
 #include <QCloseEvent>
 #include <QMessageBox>
-
+#include <boost/filesystem.hpp>
+#include <QProcess>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -179,6 +180,7 @@ void MainWindow::log(std::string msg)
     ui->log_text->appendPlainText(QString::fromStdString(msg));
 }
 
+
 void MainWindow::closeEvent (QCloseEvent *event)
 {
     QMessageBox::StandardButton resBtn = QMessageBox::question( this, "Aiming beam",
@@ -188,10 +190,8 @@ void MainWindow::closeEvent (QCloseEvent *event)
     if (resBtn != QMessageBox::Yes) {
         event->ignore();
     } else {
-
-        // the program keeps running in the background the windows are shutdown
-        qApp->quit();
         event->accept();
+        qApp->quit();
     }
 }
 

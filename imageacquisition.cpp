@@ -197,7 +197,7 @@ void imageAcquisition::startAcquisition()
                 {
                     //qDebug() << "acq 10";
                     // set correlation threshold
-                    seg->setThreshold(threshold);
+                    //seg->setThreshold(threshold);
 
                     // detection channel to be displayed
                     seg->switchChannel(channel);
@@ -222,7 +222,7 @@ void imageAcquisition::startAcquisition()
                 else
                 {
                     // set correlation threshold
-                    seg_stereo->setThreshold(threshold);
+                    //seg_stereo->setThreshold(threshold);
                     // detection channel to be displayed
                     seg_stereo->switchChannel(channel);
                     //boost::thread segmentationThread(ThreadWrapper::startStereoSegmentationThread, seg_stereo, frame_l, frame_r, frame, ch1_tau, ch2_tau, ch3_tau, ch4_tau);
@@ -363,7 +363,9 @@ void imageAcquisition::startAcquisition()
                 // need to handle this properly for manual focussing
 
                 avi_out_augmented->closeFile();
+                delete(avi_out_augmented);
                 avi_out_raw->closeFile();
+                delete(avi_out_raw);
             }
             else
             {

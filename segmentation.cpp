@@ -387,8 +387,8 @@ float Segmentation::pulsedSegmentation(cv::Mat frame_on, cv::Mat frame_off, Rect
 
     // Fit ellipse to binary segmentation
     RotatedRect fittedEllipse = fitEllipse(Mat(contours[ind]));
-    radius = ( fittedEllipse.size.height+fittedEllipse.size.width ) / 2; //2
-    radius = radius * radius_factor;
+    radius = ( fittedEllipse.size.height+fittedEllipse.size.width ) / 2 * radius_factor; //2
+    //radius = radius * radius_factor;
     x = fittedEllipse.center.x;
     y = fittedEllipse.center.y;
 

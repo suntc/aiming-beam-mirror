@@ -223,6 +223,7 @@ void startup(GUIupdater *ui)
             // initialize deconvolution only once
             if (iIRFs_initialized==false && iIRF_CH1.size()>0 && iIRF_CH2.size()>0 && iIRF_CH3.size()>0 && iIRF_CH4.size()>0)
             {
+
                 decon = new LaguerreDeconvolution(iIRF_CH1,iIRF_CH2,iIRF_CH3,iIRF_CH4,time_resolution);
                 iIRFs_initialized = true;
             }
@@ -430,7 +431,6 @@ void startup(GUIupdater *ui)
 
                 // set radius
                 acq->setRadius(radius);
-
                 // acknowledgment
                 conn.write(set_ack(key, value));
 
@@ -696,7 +696,7 @@ void startup(GUIupdater *ui)
                 Mat im = imread("C:/Aiming Beam v2/Release/release/pics/green_light.png", CV_LOAD_IMAGE_COLOR);
                 imshow("Ready", im);
                 //fullscreen. comment to facilitate debugging
-                setWindowProperty("Ready", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
+                //setWindowProperty("Ready", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
             }
             else
             {
@@ -726,6 +726,7 @@ void startup(GUIupdater *ui)
     qApp->quit();
     QProcess::startDetached(qApp->arguments()[0], qApp->arguments());
     //startup(ui);
+
 }
 
 
