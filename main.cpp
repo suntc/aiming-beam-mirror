@@ -68,6 +68,7 @@ char* set_ack (string key, string value)
 
     char cmd_[1024];
     strncpy(cmd_, cmd.c_str(), sizeof(cmd_));
+    cmd.clear();
     cmd_[sizeof(cmd_) - 1] = 0;
 
     return cmd_;
@@ -99,7 +100,7 @@ void startup(GUIupdater *ui)
     int ansi = 5;       // ansi limit, as the maximum number of frames that a single pixel can be imaged
 
     // Unused variables in the processing, but called in the code. Keep them for now
-    float threshold = 0.96;    // cross-correlation threshold
+    double threshold = 0.96;    // cross-correlation threshold
     double radius = 1.0;
     int width = 852;    // display width (number of columns)
     int height = 479;   // display height (number of rows)
@@ -220,11 +221,19 @@ void startup(GUIupdater *ui)
 
         while (true){
 
+
+
             // initialize deconvolution only once
             if (iIRFs_initialized==false && iIRF_CH1.size()>0 && iIRF_CH2.size()>0 && iIRF_CH3.size()>0 && iIRF_CH4.size()>0)
             {
 
                 decon = new LaguerreDeconvolution(iIRF_CH1,iIRF_CH2,iIRF_CH3,iIRF_CH4,time_resolution);
+
+                iIRF_CH1.clear();
+                iIRF_CH2.clear();
+                iIRF_CH3.clear();
+                iIRF_CH4.clear();
+
                 iIRFs_initialized = true;
             }
 
@@ -387,7 +396,7 @@ void startup(GUIupdater *ui)
                 conn.write(set_ack(key, value));
 
                 // let user know that acquisition has started
-                Beep(1200, 1000); // 1.2kHz, 1s
+                //Beep(1200, 1000); // 1.2kHz, 1s
 
             }
 
@@ -525,7 +534,6 @@ void startup(GUIupdater *ui)
             else if (key.compare("!3dcal") == 0)
             {
                 // start 3d calibration here
-
                 // acknowledge command
                 conn.write(set_ack(key, "1"));
 
@@ -601,6 +609,7 @@ void startup(GUIupdater *ui)
             {
                 data_CH1 = tempdata;
                 double lifetime = decon->getLifetime(data_CH1,1);
+                data_CH1.clear();
                 acq->set_lifetime(lifetime,1);
                 conn.write(set_ack(key, std::to_string(lifetime)));
             }
@@ -610,6 +619,7 @@ void startup(GUIupdater *ui)
             {
                 data_CH2 = tempdata;
                 double lifetime = decon->getLifetime(data_CH2,2);
+                data_CH2.clear();
                 acq->set_lifetime(lifetime,2);
                 conn.write(set_ack(key, std::to_string(lifetime)));
             }
@@ -619,6 +629,7 @@ void startup(GUIupdater *ui)
             {
                 data_CH3 = tempdata;
                 double lifetime = decon->getLifetime(data_CH3,3);
+                data_CH3.clear();
                 acq->set_lifetime(lifetime,3);
                 conn.write(set_ack(key, std::to_string(lifetime)));
             }
@@ -628,6 +639,7 @@ void startup(GUIupdater *ui)
             {
                 data_CH4 = tempdata;
                 double lifetime = decon->getLifetime(data_CH4,4);
+                data_CH4.clear();
                 acq->set_lifetime(lifetime,4);
                 conn.write(set_ack(key, std::to_string(lifetime)));
             }
@@ -696,7 +708,8 @@ void startup(GUIupdater *ui)
                 Mat im = imread("C:/Aiming Beam v2/Release/release/pics/green_light.png", CV_LOAD_IMAGE_COLOR);
                 imshow("Ready", im);
                 //fullscreen. comment to facilitate debugging
-                //setWindowProperty("Ready", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
+                setWindowProperty("Ready", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
+                im.release();
             }
             else
             {
@@ -704,7 +717,11 @@ void startup(GUIupdater *ui)
             }
 
             previous_mode = mode;
+
+            //clear up thread
             readingThread.join();
+            readingThread.detach();
+            readingThread.~thread();
 
         }
 

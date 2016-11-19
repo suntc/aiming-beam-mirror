@@ -93,6 +93,8 @@ double LaguerreDeconvolution::getLifetime(vector<double> fIRF, int channel)
             lifetime = deconProc.lifetCalc(deconMatrices_CH4, fIRF1, LaguerreOrder, Ccols, resTime);
             break;
         }
+
+        fIRF1.release();
     }
     //qDebug() << "deconv 2";
     //qDebug() << lifetime;

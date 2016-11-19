@@ -30,6 +30,7 @@ private:
     bool connected = false;
     int width;
     int height;
+    cv::Mat image;
 };
 
 #endif // VIDEOPOINTGREY_H

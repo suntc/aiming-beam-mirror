@@ -93,6 +93,7 @@ string IOPath::getandincreaseCurrentCounter()
     newFile << std::to_string(i_dec+1);
     newFile.close();
 
+
     return std::to_string(i_dec+1);
 }
 

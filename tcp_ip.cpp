@@ -127,6 +127,7 @@ void TCP_IP::write(const char *sendbuf)
         // unknown. keep it connected for now
         isConnected = true;
     }
+
 }
 
 /*
@@ -135,6 +136,7 @@ void TCP_IP::write(const char *sendbuf)
 void TCP_IP::read(string *output, int *len, vector<double> *data)
 {
     int status;
+
     vector<double> tempdata; // temporary vector to hold the data
 
     // buffer to hold command sent by master
@@ -202,7 +204,7 @@ void TCP_IP::read(string *output, int *len, vector<double> *data)
             // save data in a temporary variable
             tempdata.push_back(temp2);
         }
-   }
+    }
     //qDebug() << recvbuf;
     *output = recvbuf;
     *len = status;

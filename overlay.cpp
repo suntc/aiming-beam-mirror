@@ -45,7 +45,6 @@ void Overlay::init(int size_x, int size_y, double scale_mn, double scale_mx)
     this->scale_max = scale_mx;
     this->scale_min = scale_mn;
 
-
     drawColorBar();
 }
 
@@ -258,10 +257,18 @@ void Overlay::drawCircle(int x, int y, int radius, double val)
         }
 
     }
-    //qDebug() << "after loop";
 
-
-    //imshow("activeDisplay", RGBimage);
+    //release memory
+    segm_acc.release();
+    tmp.release();
+    segm_acc2.release();
+    segm_val.release();
+    acc_pre.release();
+    acc_post.release();
+    binary_segm.release();
+    const_one.release();
+    tmp1.release();
+    rgb_segm.release();
 
     return;
 }
@@ -374,4 +381,11 @@ void Overlay::setAnsi(int ansi)
     setNewInterval(scale_min,scale_max);
 }
 
+Overlay::~Overlay()
+{
+    delete r;
+    delete g;
+    delete b;
+
+}
 

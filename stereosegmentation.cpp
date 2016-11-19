@@ -232,3 +232,13 @@ void StereoSegmentation::switchChannel(int channel)
     if(channel==0)
         overlay = height_profile;
 }
+
+StereoSegmentation::~StereoSegmentation()
+{
+    delete ch1_overlay;
+    delete ch2_overlay;
+    delete ch3_overlay;
+    delete ch4_overlay;
+    delete overlay;
+    //delete calib;
+}

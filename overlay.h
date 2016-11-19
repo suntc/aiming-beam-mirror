@@ -13,6 +13,8 @@ class Overlay
 public:
     Overlay(int res_x, int res_y, double scale_mn, double scale_mx, int ansi);
     Overlay(int res_x, int res_y, double scale_mn, double scale_mx, StereoCalibration * calib);
+    ~Overlay();
+
     void drawCircle(int x, int y, int radius, double val);
     cv::Mat getOverlay();
     cv::Mat getAccumulator();

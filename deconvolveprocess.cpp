@@ -20,9 +20,6 @@ DeconvolveProcess::DeconvolveProcess()
 double DeconvolveProcess::Laguerre_alphaval(int LaguerreLength, int &LG_order)
 {
     // Reads the lookup table of alpha values and finds the one corresponding to the current data length and Laguerre order
-
-
-
     double alpha = 0.0;
 
     string line;
@@ -88,6 +85,8 @@ double DeconvolveProcess::Laguerre_alphaval(int LaguerreLength, int &LG_order)
 
         LG_order = 0;
     }
+
+    pFile.close();
     return alpha;
 }
 
@@ -139,6 +138,9 @@ Mat DeconvolveProcess::LaguerreFilt(vector<double> laser, Mat &L)
     Rect myROI(0, 0, L.cols, L.rows);
     vv = vv_trans(myROI);
 
+    vv_trans.release();
+    padded.release();
+
     return vv;
 }
 
@@ -163,6 +165,11 @@ Mat DeconvolveProcess::deriv3rd(int DataLength, Mat &L)
 
     D_Mat = D_Mat_filt0.t() * L;
 
+    idMat.release();
+    D_Mat_filt.release();
+    D_Mat_filt0.release();
+    padded2.release();
+
     return D_Mat;
 }
 
@@ -186,7 +193,9 @@ Mat DeconvolveProcess::CholFact(Mat &H)
             LH_chol = H_chol.row(j);
             LH_chol = LH_chol.t();
             H_chol.row(j).col(i) = (H.row(j).col(i) - H_chol.row(i) * LH_chol) / H_chol.row(i).col(i);
+            LH_chol.release();
         }
+        LL.release();
     }
 
     H_chol = H_chol.t();
@@ -230,6 +239,11 @@ void DeconvolveProcess::preMatChannels(vector<double> laser, deconMats &deconMat
         }
     }
 
+    L.release();
+    H1.release();
+    H_chol.release();
+    C.release();
+
     delete allfuncs;
 }
 
@@ -257,6 +271,14 @@ double DeconvolveProcess::lifetCalc(deconMats deconMatrices, Mat fIRF1, int Lagu
 
     double lifet_out = lifet.at<double>(0, 0) * resTime;
     lifet_out = round(lifet_out * 10) / 10;
+
+    lam.release();
+    cc.release();
+    temp.release();
+    h.release();
+    lifet.release();
+    dtime.release();
+    ivec.clear();
 
     return lifet_out;
 }
@@ -294,6 +316,16 @@ Mat DeconvolveProcess::solveNNLS(Mat fIRF1, Mat l1, int LaguerreOrder, int Ccols
     Mat lam(Ccols, 1, CV_64FC1, lam_array);
 
     Mat lam2 = lam.clone();
+
+    lam.release();
+    d.release();
+
+    delete w;
+    delete zz;
+    delete indx;
+    delete lam_array;
+    delete b;
+
     return lam2;
 }
 

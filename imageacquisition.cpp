@@ -30,19 +30,6 @@ void imageAcquisition::startupCamera(int ch, float thres)
 
     if (stereomode==false)
     {
-        /*
-        if (invivo) // to frame grabber
-        {
-            cam = new VideoEpiphan();
-        }
-        else    // to USB camera
-        {
-            cam = new VideoPointGrey();
-        }
-
-        if (cam->isConnected())
-            ready = true;
-        */
 
         // check USB camera
         cam_usb = new VideoPointGrey();
@@ -63,9 +50,6 @@ void imageAcquisition::startupCamera(int ch, float thres)
 
     channel = ch; // channel to be displayed
     threshold = thres; // cross-correlation threshold
-    //scale_auto = true; // auto colorbar
-    //scale_min = 2;      // min scale value
-    //scale_max = 6;      // max scale value
 }
 
 void imageAcquisition::startAcquisition()
@@ -75,14 +59,11 @@ void imageAcquisition::startAcquisition()
 
     if (!stereomode)
     {
-        //qDebug() << "getNextFrame";
         if (invivo)
             frame = cam->getNextFrame();
         else
             frame = cam_usb->getNextFrame();
-        //frame = readout_frame;
-        //qDebug() << "invoke mono";
-        //seg = new Segmentation(frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false);
+
     }
     else
     {
@@ -98,26 +79,25 @@ void imageAcquisition::startAcquisition()
     VideoOutput *avi_out_augmented = nullptr;
     VideoOutput *avi_out_raw = nullptr;
 
+    // stereo pair
+    Mat frame_r;
+    Mat frame_l;
+
     while (thread)
     {
         if (ctrl)
         {
-            //qDebug() << "acq 1";
             if (!seg && !stereomode)
             {
-                //namedWindow( "Acquisition", CV_WINDOW_NORMAL );
-                //cvSetWindowProperty("Acquisition", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
-                //qDebug() << "build monoseg";
+
                 seg = new Segmentation(frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false, scale_auto, ansi);
             }
-            //qDebug() << "acq 2";
+
             if (!seg_stereo && stereomode)
             {
-                qDebug() << "build stereoseg";
                 seg_stereo  = new StereoSegmentation(calib, frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false);
             }
 
-            //qDebug() << "acq 3";
             // initialization
             if (init_output==false)
             {
@@ -129,7 +109,6 @@ void imageAcquisition::startAcquisition()
                 infix.append("_run");
                 infix.append(std::to_string(run_number));
                 std::string filename = IOPath::getDataOutputFilename(infix,"avi","videos");
-
                 avi_out_raw = new VideoWriter_ab(filename, frame.cols, frame.rows);
 
                 string infix0 = infix;
@@ -139,10 +118,6 @@ void imageAcquisition::startAcquisition()
 
                 init_output = true;
             }
-            //qDebug() << "acq 4";
-            // stereo pair
-            Mat frame_r;
-            Mat frame_l;
 
             // if in acquisition, do segmentation
             if (inAcquisition)
@@ -152,19 +127,14 @@ void imageAcquisition::startAcquisition()
                 if (!stereomode)
                 {
 
-
                     // make sure we have something in readout and reference frame before segmentation
                     if (!ref_frame.empty() && !readout_frame.empty())
                     {
                         if (!writing)
                         {
-                            //qDebug() << "acq 5";
                             frame_on = ref_frame;//.clone();
-                            //qDebug() << "acq 5a";
                             frame_off = readout_frame;//.clone();
-                            //qDebug() << "acq 5b";
                             frame = vis_frame;//.clone(); //frame_off.clone();
-                            //qDebug() << "acq 6";
                         }
                         else
                             continue;
@@ -186,16 +156,12 @@ void imageAcquisition::startAcquisition()
                     frame_r = calib->getRectifiedIm(frame_r,1);
                 }
 
-                //qDebug() << "acq 7";
                 // add raw frame to avi export
                 avi_out_raw->addFrame(frame);
-                //qDebug() << "acq 8";
                 boost::thread* segmentationThread;
 
-                //qDebug() << "acq 9";
                 if (!stereomode)
                 {
-                    //qDebug() << "acq 10";
                     // set correlation threshold
                     //seg->setThreshold(threshold);
 
@@ -216,7 +182,6 @@ void imageAcquisition::startAcquisition()
                         seg->setColorScale(scale_min, scale_max);
                     }
 
-                    //qDebug() << "acq 11";
                     segmentationThread = new boost::thread(boost::bind(ThreadWrapper::startSegmentationThread, seg, frame, frame_on, frame_off, ch1_tau, ch2_tau, ch3_tau, ch4_tau));
                 }
                 else
@@ -228,9 +193,6 @@ void imageAcquisition::startAcquisition()
                     //boost::thread segmentationThread(ThreadWrapper::startStereoSegmentationThread, seg_stereo, frame_l, frame_r, frame, ch1_tau, ch2_tau, ch3_tau, ch4_tau);
                     segmentationThread = new boost::thread(boost::bind(ThreadWrapper::startStereoSegmentationThread, seg_stereo, frame_l, frame_r, frame, ch1_tau, ch2_tau, ch3_tau, ch4_tau));
 
-                    // wait for thread to end
-                    //segmentationThread.join();
-
                 }
                 // clear lifetimes
                 set_lifetime(NO_LIFETIME,1);
@@ -240,40 +202,23 @@ void imageAcquisition::startAcquisition()
 
                 // thread
                 segmentationThread->join();
+                segmentationThread->detach();
+                segmentationThread->~thread();
 
                 // display timer
                 clock_t timer_acquisition = clock();
                 double acq_timer = double(timer_acquisition - timer_acquisition_start);
                 timer_display.push_back(acq_timer);
 
-                //qDebug() << "seg a";
-
-
-                //qDebug() << "seg b";
                 // add segmented frame to avi export
                 avi_out_augmented->addFrame(frame);
-                //qDebug() << "seg c";
             }
 
             // show frame
-            //qDebug() << "seg d";
             imshow("Acquisition", frame);
-            //qDebug() << "seg e";
             // fullscreen
             setWindowProperty("Acquisition", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
-            // TODO: fix for channel switch!
-            //qDebug() << "seg f";
-            // is this necessary?
-            // removing waitkey makes it to crash
 
-
-            //int k=waitKey(10);
-            /*
-            if (k>=49 && k<=52 && !stereomode)
-                seg->switchChannel(k-48);
-            if (k>=48 && k<=52 && stereomode)
-                seg_stereo->switchChannel(k-48);
-            */
             // cleanup
             if (!ctrl)
             {
@@ -281,18 +226,28 @@ void imageAcquisition::startAcquisition()
                 destroyWindow("Acquisition");
                 init_output=false;
 
+                avi_out_augmented->closeFile();
+                avi_out_raw->closeFile();
+
                 if (!stereomode)
                 {
 
                     std::string filename = IOPath::getDataOutputFilename(infix,"txt","txt");
                     IOTxtData::writeTxtFile(filename, seg );
 
-                    for (int i=1; i<5; i++)
+                    for (int i=0; i<5; i++)
                     {
                         string infix0;
                         infix0 = infix;
-                        infix0 = infix0.append("_CH");
-                        infix0 = infix0.append(to_string(i));
+                        if (i == 0)
+                        {
+                            infix0 = infix0.append("_raw");
+                        }
+                        else
+                        {
+                            infix0 = infix0.append("_CH");
+                            infix0 = infix0.append(to_string(i));
+                        }
 
                         filename = IOPath::getDataOutputFilename(infix0,"jpg","figures");
                         IOTxtData::writeJpgFile_mono(filename,seg,i);
@@ -323,8 +278,21 @@ void imageAcquisition::startAcquisition()
                     filename = IOPath::getDataOutputFilename(f,"txt","logs");
                     IOTxtData::writeLogFile(filename,timer_display); timer_display.clear();
 
-                    delete(seg);
-                    seg = new Segmentation(frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false, scale_auto, ansi);
+                    f.clear();
+                    filename.clear();
+
+                    frame_on = Mat();
+                    frame_off = Mat();
+                    vis_frame = Mat();
+                    ref_frame = Mat();
+                    readout_frame = Mat();
+
+                    delete seg;
+                    seg = nullptr;
+
+                    delete(avi_out_augmented);
+                    delete(avi_out_raw);
+                    //seg = new Segmentation(frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false, scale_auto, ansi);
 
                 }
                 else
@@ -360,31 +328,29 @@ void imageAcquisition::startAcquisition()
                     qDebug() << "invoke stereo 2";
                     seg_stereo = new StereoSegmentation(calib, frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false);
                 }
-                // need to handle this properly for manual focussing
 
-                avi_out_augmented->closeFile();
-                delete(avi_out_augmented);
-                avi_out_raw->closeFile();
-                delete(avi_out_raw);
+
+
             }
             else
             {
-                //qDebug() << "seg h";
-               // qDebug() << "focus";
+                // do nothing. no acquisition
             }
         }
 
     }
 
     // cleanup
-    //qDebug() << "remove me and I'll crash on disconnect";
+    /*/qDebug() << "remove me and I'll crash on disconnect";
+    /
     if (avi_out_augmented != nullptr && avi_out_raw != nullptr)
     {
         avi_out_augmented->closeFile();
-        delete(avi_out_augmented);
+        //delete(avi_out_augmented);
         avi_out_raw->closeFile();
-        delete(avi_out_raw);
+        //delete(avi_out_raw);
     }
+    */
     //qDebug() << "heer";
 
     if (!stereomode)
@@ -505,7 +471,6 @@ void imageAcquisition::captureFrame()
     int counter = 0;
     int nframes = 10;
     std::vector<double> blues(nframes);
-    std::vector<cv::Mat> images;
     clock_t timer_off;
 
     while (thread)
@@ -522,20 +487,14 @@ void imageAcquisition::captureFrame()
             // check if there is an image. no image is passed if some parameters are changed through LV - image capture throws an error
             if (temp.empty())
             {
-                //qDebug() << "is empty";
+                temp.release();
                 continue;
             }
-
-            //cv::Mat tempcopy = temp.clone();
-            //readout_frame = temp;
 
             //to lab space and look at channel 2
             Mat frame_lab;
             cvtColor(temp, frame_lab, CV_BGR2Lab);
             extractChannel(frame_lab, frame_lab, 2);
-
-            //const char * filenamef1 = "frame_lab.jpg";
-            //cvSaveImage(filenamef1, &(IplImage(frame_lab)));
 
             // check if object exists
             if (seg)
@@ -563,12 +522,6 @@ void imageAcquisition::captureFrame()
                 double level = 0.8;
                 thres = 0.1 * thres + 0.9 * ((level * span) + blue_mn);
 
-                //qDebug() << "Start";
-               // qDebug() << blueint;
-                //qDebug() << blue_mx;
-                //qDebug() << blue_mn;
-                //qDebug() << thres;
-
                 // lock reading while writing;
                 writing = true;
 
@@ -589,6 +542,7 @@ void imageAcquisition::captureFrame()
                 log_pulse_min.push_back(blue_mn);
                 log_pulse_cur.push_back(blueint);
 
+
                 clock_t now = clock();
                 //qDebug() << (double)now;
                 double elapsed_time = double(now - timer_off);
@@ -600,6 +554,7 @@ void imageAcquisition::captureFrame()
 
                 counter++;
                 if (counter == nframes) counter = 0;
+
             }
             else
             {
@@ -609,6 +564,9 @@ void imageAcquisition::captureFrame()
                 vis_frame = temp.clone();
                 writing = false;
             }
+
+            temp.release();
+            frame_lab.release();
 
             Sleep(1); // let it rest for ~10 ms. otherwise it is likely to crash
         } else {
@@ -631,11 +589,13 @@ void imageAcquisition::captureFrame()
                     focus_frame = cam_usb->getNextFrame();
 
                 imshow("Focus", focus_frame);
+
                 // fullscreen
                 setWindowProperty("Focus", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
 
-                //Sleep(20);  // no need for max frame rate here
                 if (!inFocus)   destroyWindow("Focus");
+
+                focus_frame.release();
 
             }
 
@@ -648,18 +608,12 @@ void imageAcquisition::captureFrame()
 void imageAcquisition::setAutoScale(bool autoscale)
 {
     scale_auto = autoscale;
-    //if(seg)
-    //    seg->setAutoScale(scale_auto);
 }
 
 void imageAcquisition::setScale(double mn, double mx)
 {
     scale_max = mx;
     scale_min = mn;
-
-    //qDebug() << "set scale settings";
-    //if(seg)
-    //    seg->setColorScale(mn,mx);
 }
 
 void imageAcquisition::setAnsi(int ansi)

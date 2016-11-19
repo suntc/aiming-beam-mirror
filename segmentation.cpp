@@ -316,6 +316,8 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
         ellipse(frame, Point(x,y), Size(5,5), 0, 0, 360, Scalar( 255, 255, 255 ), 3, 8, 0);
     }
 
+    frame_cut.release();
+
     return;
 }
 
@@ -392,6 +394,15 @@ float Segmentation::pulsedSegmentation(cv::Mat frame_on, cv::Mat frame_off, Rect
     x = fittedEllipse.center.x;
     y = fittedEllipse.center.y;
 
+    lab_on.release();
+    lab_off.release();
+    img_diff.release();
+    contours.clear();
+    element.release();
+    im_floodfill.release();
+    im_floodfill_inv.release();
+    im_out.release();
+
     // If segmentation is out of the frame area, it is not valid
     if( x<0 | y<0 | x>corrArea.width | y>corrArea.height | radius>res_y/10)
     {
@@ -402,6 +413,17 @@ float Segmentation::pulsedSegmentation(cv::Mat frame_on, cv::Mat frame_off, Rect
     if (radius< 15)
         radius = 15;
 
+
     // Segmentation is valid
     return 1;
+}
+
+Segmentation::~Segmentation()
+{
+    delete ch1_overlay;
+    delete ch2_overlay;
+    delete ch3_overlay;
+    delete ch4_overlay;
+    delete overlay;
+    delete calib;
 }

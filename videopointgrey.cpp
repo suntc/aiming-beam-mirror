@@ -51,7 +51,6 @@ VideoPointGrey::VideoPointGrey()
         PrintError(error);
         return;
     }
-
     //does not work
    // error = cam.SetVideoModeAndFrameRate(FlyCapture2::VIDEOMODE_800x600RGB, FlyCapture2::FRAMERATE_120 );
     //qDebug() << error.GetDescription();
@@ -62,7 +61,6 @@ VideoPointGrey::VideoPointGrey()
         std::cout << "Bandwidth exceeded" << std::endl;
         return;
     }
-
 
 
     connected = true;
@@ -94,14 +92,7 @@ cv::Mat VideoPointGrey::getNextFrame( )
 
     // convert to OpenCV Mat
     unsigned int rowBytes = (double)rgbImage.GetReceivedDataSize()/(double)rgbImage.GetRows();
-    cv::Mat image = cv::Mat(rgbImage.GetRows(), rgbImage.GetCols(), CV_8UC3, rgbImage.GetData(),rowBytes);
-
-    //qDebug() << "image pixel";
-    //qDebug() << image.at<cv::Vec3b>(1000, 1200)[0];
-
-    //qDebug() << width;
-    //qDebug() << height;
-    //cv::Mat image = cv::Mat(height, width, CV_8UC3, rgbImage.GetData(),rowBytes);
+    image = cv::Mat(rgbImage.GetRows(), rgbImage.GetCols(), CV_8UC3, rgbImage.GetData(),rowBytes);
 
     return image.clone();
 }

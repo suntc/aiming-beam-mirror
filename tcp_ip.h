@@ -16,7 +16,8 @@ class TCP_IP
 private:
     const char *ip, *port;
     bool isConnected;
-
+    vector<double> tempdata; // temporary vector to hold the data
+    char recvbuf[4096];
     SOCKET socketfd;
 
 public:

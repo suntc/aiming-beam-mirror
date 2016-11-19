@@ -48,7 +48,7 @@ public:
     bool getUSBReady();
     std::string subject;
     int run_number;
-    Segmentation* seg;
+    Segmentation *seg;
     StereoSegmentation* seg_stereo;
     StereoCalibration *calib;
 

@@ -48,6 +48,7 @@ vector<double> IOTxtData::getLifetimeData(string data_file, int channel)
             row = 1;
         }
     }
+    file.close();
 
     return v;
 }
@@ -141,6 +142,8 @@ void IOTxtData::writeTxtFile(string filename, Segmentation * seg)
         it_ch1++; it_ch2++; it_ch3++; it_ch4++;
     }
     outputFile.close();
+
+    frame_noms.clear();
     return;
 }
 
@@ -154,6 +157,7 @@ void IOTxtData::writeLogFile(string filename, vector<double> log)
         outputFile << *it << " ";
         it++;
     }
+
     outputFile.close();
     return;
 }
@@ -224,6 +228,8 @@ void IOTxtData::writeJpgFile_mono(string filename, Segmentation * seg, int chann
 
     cv::Mat c1;
 
+    if(channel==0)  // raw image, no overlay
+        c1 = seg->firstFrame;
     if(channel==1)
         addWeighted( seg->firstFrame, 0.5, seg->ch1_overlay->mergeOverlay(seg->firstFrame), 0.5, 0.0, c1);
     if(channel==2)
@@ -235,6 +241,8 @@ void IOTxtData::writeJpgFile_mono(string filename, Segmentation * seg, int chann
 
     const char * filename1 = filename.c_str();
     cvSaveImage(filename1, &(IplImage(c1)));
+
+    c1.release();
 }
 
 void IOTxtData::writeJpgFile_stereo(string filename, StereoSegmentation * seg, int channel )
@@ -257,4 +265,6 @@ void IOTxtData::writeJpgFile_stereo(string filename, StereoSegmentation * seg, i
 
     const char * filename1 = filename.c_str();
     cvSaveImage(filename1, &(IplImage(c1)));
+
+    c1.release();
 }

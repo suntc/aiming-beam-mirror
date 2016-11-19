@@ -8,6 +8,7 @@ class VideoWriter_ab : public VideoOutput
 {
 public:
     VideoWriter_ab();
+    ~VideoWriter_ab();
     VideoWriter_ab(std::string filename,int dim_x,int dim_y);
     void addFrame(cv::Mat frame);
     int getNumberOfFrames();

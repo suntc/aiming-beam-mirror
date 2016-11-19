@@ -11,6 +11,8 @@ class StereoSegmentation
 {
 public:
     StereoSegmentation(StereoCalibration * sc, cv::Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ);
+    ~StereoSegmentation();
+
     void startSegmentation(cv::Mat frame_l, cv::Mat frame_r, cv::Mat frame_vis, double lt_ch1, double lt_ch2, double lt_ch3, double lt_ch4);
     void setThreshold(double thres);
     void switchChannel(int channel);

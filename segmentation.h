@@ -11,7 +11,7 @@ class Segmentation
 public:
     Segmentation(cv::Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ, bool autoscale, int ansi);
     Segmentation(cv::Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ, StereoCalibration * calib, bool autoscale);
-    //~Segmentation();
+    ~Segmentation();
 
     void startSegmentation(cv::Mat frame, cv::Mat frame_on, cv::Mat frame_off, double lt_ch1, double lt_ch2, double lt_ch3, double lt_ch4);
     void setThreshold(double thres);
@@ -45,7 +45,6 @@ public:
 
     float thres;
 
-    cv::Mat* createFilter(int sigma);
     float correlateGaussian(cv::Mat frame, int &x, int &y, int &radius);
     float simpleThreshold(cv::Mat frame, int &x, int &y, int &radius);
     float doubleRingSegmentation(cv::Mat frame, int &x, int &y, int &radius);
@@ -89,6 +88,7 @@ private:
     double radius_factor = 1.0;
 
     StereoCalibration * calib;
+
 };
 
 #endif // SEGMENTATION_H
