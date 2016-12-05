@@ -34,7 +34,6 @@ void imageAcquisition::startupCamera(int ch, float thres)
         // check USB camera
         cam_usb = new VideoPointGrey();
         ready_usb = cam_usb->isConnected();
-
         // check frame grabber
         cam = new VideoEpiphan();
         ready_fg = cam->isConnected();
@@ -57,13 +56,14 @@ void imageAcquisition::startAcquisition()
     // initialization
     //frame = stereo_cam->getNextFrame(0);
 
-    if (!stereomode)
+    /*if (!stereomode)
     {
-        if (invivo)
+        if (true) //invivo)
             frame = cam->getNextFrame();
         else
             frame = cam_usb->getNextFrame();
-
+        qDebug() << frame.cols;
+        qDebug() << frame.rows;
     }
     else
     {
@@ -73,7 +73,7 @@ void imageAcquisition::startAcquisition()
         //qDebug() << "invoke stereo";
         //seg_stereo  = new StereoSegmentation(calib, frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false);
     }
-
+    */
     bool init_output = false;
     clock_t timer_acquisition_start;
     VideoOutput *avi_out_augmented = nullptr;
@@ -89,7 +89,7 @@ void imageAcquisition::startAcquisition()
         {
             if (!seg && !stereomode)
             {
-
+                //qDebug() << "here after";
                 seg = new Segmentation(frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false, scale_auto, ansi);
             }
 
@@ -101,7 +101,6 @@ void imageAcquisition::startAcquisition()
             // initialization
             if (init_output==false)
             {
-
                 // mark start of acquisition
                 timer_acquisition_start = clock();
 
@@ -176,6 +175,7 @@ void imageAcquisition::startAcquisition()
 
                     // set autoscale
                     seg->setAutoScale(scale_auto);
+
                     if (!scale_auto)
                     {
                         // if not autoscale, set scale limits
@@ -216,8 +216,11 @@ void imageAcquisition::startAcquisition()
 
             // show frame
             imshow("Acquisition", frame);
+
             // fullscreen
-            setWindowProperty("Acquisition", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
+            // for now, only in vivo measurements
+            if (invivo)
+                setWindowProperty("Acquisition", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
 
             // cleanup
             if (!ctrl)
@@ -503,7 +506,6 @@ void imageAcquisition::captureFrame()
                 // eventually we need a way to lock this, so that the area is the same
                 // for both frames
                 cv::Rect area(seg->x0, seg->y0, seg->x1, seg->y1);
-
                 // average intensity in the 2nd channel
                 cv::Scalar meanblueint = mean(frame_lab(area));
                 double blueint = meanblueint.val[0];
@@ -623,11 +625,14 @@ void imageAcquisition::setAnsi(int ansi)
 
 bool imageAcquisition::getUSBReady()
 {
+    frame = cam_usb->getNextFrame();
     return ready_usb;
 }
 
 bool imageAcquisition::getFGReady()
 {
+
+    frame = cam->getNextFrame();
     return ready_fg;
 }
 

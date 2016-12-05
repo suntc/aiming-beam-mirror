@@ -12,14 +12,15 @@ VideoEpiphan::VideoEpiphan()
     try
     {
         cap.open(0);
-        //qDebug() << "frame grabber OK";
+        qDebug() << "frame grabber OK";
     }
     catch(...)
     {
-        //qDebug() << "no frame grabber";
+        qDebug() << "no frame grabber";
     }
 
-
+    cap.set(CV_CAP_PROP_FRAME_WIDTH,1280);
+    cap.set(CV_CAP_PROP_FRAME_HEIGHT,720);
     //if (found==0)
     //{
         //QMessageBox messageBox;
@@ -29,6 +30,7 @@ VideoEpiphan::VideoEpiphan()
 
     if(!cap.isOpened()) // If camera cannot be opened display message and return
     {
+        qDebug() << "not well";
         //QMessageBox messageBox;
         //messageBox.critical(0, "Error", "Camera initialization failed!");
         //messageBox.setFixedSize(500,200);
@@ -40,8 +42,8 @@ VideoEpiphan::VideoEpiphan()
         //qDebug() << frameHeight;
         //qDebug() << frameWidth;
         RGBimage.create(frameWidth, frameHeight, CV_8UC3);
-        cap.set(CV_CAP_PROP_FRAME_WIDTH,768);
-        cap.set(CV_CAP_PROP_FRAME_HEIGHT,1024);
+        //cap.set(CV_CAP_PROP_FRAME_WIDTH,1280);
+        //cap.set(CV_CAP_PROP_FRAME_HEIGHT,720);
 
     }
 
@@ -54,7 +56,8 @@ Mat VideoEpiphan::getNextFrame()
 {
     // Acquire image
     cap >> RGBimage;
-    //resize(retmat, retmat, Size (frame_cols, frame_rows));
+    //imshow("image", RGBimage);
+    //resize(RGBimage, RGBimage, Size (1280,720)); //frame_cols, frame_rows));
     return RGBimage;
 }
 

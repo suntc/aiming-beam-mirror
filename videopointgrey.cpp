@@ -28,6 +28,7 @@ VideoPointGrey::VideoPointGrey()
     if ( numCameras < 1 )
     {
         //cout << "No camera detected." << endl;
+        std::cout << "No camera detected" << std::endl;
         return;
     }
 

@@ -94,7 +94,6 @@ void Overlay::setNewInterval(double mn, double mx)
     // validate colorbar boundaries
     //scale_max = (scale_max > limit_max) ? limit_max : mx;
     //scale_min = (scale_min < limit_min) ? limit_min : mn;
-
     if((mn<abs_min) | (mx>abs_max) | (mn>mx))
         return;
 

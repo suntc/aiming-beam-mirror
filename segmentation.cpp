@@ -37,12 +37,24 @@ Segmentation::Segmentation(Mat frame, cv::Point point1, cv::Point point2, bool i
     res_y = s.height;
 
     this->scale_auto=autoscale;
+    double lower_bound_;
+    double upper_bound_;
+    if (autoscale==true)
+    {
+        lower_bound_ = 2;
+        upper_bound_ = 3;
+    }
+    else
+    {
+        lower_bound_ = 1;
+        upper_bound_ = 6;
+    }
 
     // Initialize Overlays
-    ch1_overlay = new Overlay(res_x,res_y,1,6, ansi);
-    ch2_overlay = new Overlay(res_x,res_y,1,6, ansi);
-    ch3_overlay = new Overlay(res_x,res_y,1,6, ansi);
-    ch4_overlay = new Overlay(res_x,res_y,1,6, ansi);
+    ch1_overlay = new Overlay(res_x,res_y,lower_bound_,upper_bound_, ansi);
+    ch2_overlay = new Overlay(res_x,res_y,lower_bound_,upper_bound_, ansi);
+    ch3_overlay = new Overlay(res_x,res_y,lower_bound_,upper_bound_, ansi);
+    ch4_overlay = new Overlay(res_x,res_y,lower_bound_,upper_bound_, ansi);
     stereo_setup = false;
 
     // the pointer overlay points to the overlay that is currently displayed
@@ -153,7 +165,6 @@ void Segmentation::setColorScale(double mn, double mx)
 
 void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, double lt_ch1, double lt_ch2, double lt_ch3, double lt_ch4)
 {
-
     if (!firstFrameSet)
     {
         //save the first frame
@@ -190,7 +201,8 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
     log_frame_no.push_back(idx);
 
     // cut current segmentation region from frame
-    int x, y, radius;
+    int x, y;
+    int radius = 1;
     float correlation;
 
     int xfrom = (last_x-area_dim < ROI_left_upper.x ) ? ROI_left_upper.x  : last_x-area_dim;
@@ -230,6 +242,7 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
         // update scale bar limits
         if(!stereo_setup && scale_auto)
         {
+            //qDebug() << "startset";
             if (lt_ch1>0)
             {
                 if (lt_ch1>ch1_overlay->getUpperBound())
@@ -262,6 +275,7 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
                 if (lt_ch4<ch4_overlay->getLowerBound() && lt_ch4>0)
                     ch4_overlay->setNewInterval(floor(lt_ch4),ch4_overlay->getUpperBound());
             }
+            //qDebug() << "startset finished";
         }
 
         if (!stereo_setup)
@@ -409,9 +423,13 @@ float Segmentation::pulsedSegmentation(cv::Mat frame_on, cv::Mat frame_off, Rect
         return 0;
     }
 
-    // Define max. radius
+    // Define min. radius
     if (radius< 15)
         radius = 15;
+
+    //defnie max. radius
+    if (radius > 50)
+        radius = 50;
 
 
     // Segmentation is valid
