@@ -27,6 +27,8 @@ public:
     bool stereomode = false;
     bool aiming_beam_bool = false;
     bool invivo = false;
+    int idx = 0;
+    int idx_prev = 0;
     int channel = 1;
     double threshold = 0.96;
     imageAcquisition(bool stereomode);

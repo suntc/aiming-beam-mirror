@@ -292,9 +292,33 @@ void startup(GUIupdater *ui)
                 subject = value;
                 acq->subject = value;
 
+                //create path
+                string dir_path = IOPath::getDataDir();
+                dir_path.append(subject);
+
+                // create subject folder
+                boost::filesystem::create_directory((dir_path).c_str());
+
+                // videos folder
+                string foldername = IOPath::getCategoryFolderPath("videos",subject);
+                boost::filesystem::create_directory(foldername.c_str());
+
+                // figures folder
+                foldername = IOPath::getCategoryFolderPath("figures",subject);
+                boost::filesystem::create_directory(foldername.c_str());
+
+                // txt folder
+                foldername = IOPath::getCategoryFolderPath("txt",subject);
+                boost::filesystem::create_directory(foldername.c_str());
+
+                // logs folder
+                foldername = IOPath::getCategoryFolderPath("logs",subject);
+                boost::filesystem::create_directory(foldername.c_str());
+
+                // create data, videos, figure and logs folder
                 // send acknowledgment
-                conn.write("test\r\n");
-                //conn.write(set_ack(key, subject));
+                //conn.write("test\r\n");
+                conn.write(set_ack(key, subject));
 
             }
 

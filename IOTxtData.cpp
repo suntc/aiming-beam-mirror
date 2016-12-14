@@ -59,6 +59,7 @@ void IOTxtData::writeMatData(string filename, Segmentation * seg)
     cv::Mat ch1 = seg->ch1_overlay->values;
     filename.insert (filename.size()-4, "1");
     std::fstream outputFile;
+
     outputFile.open( filename, std::ios::out ) ;
 
     for(int i=0; i<ch1.rows; i++)

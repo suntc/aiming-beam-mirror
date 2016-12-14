@@ -107,12 +107,12 @@ void imageAcquisition::startAcquisition()
                 infix = subject;
                 infix.append("_run");
                 infix.append(std::to_string(run_number));
-                std::string filename = IOPath::getDataOutputFilename(infix,"avi","videos");
+                std::string filename = IOPath::getDataOutputFilename(infix,"avi","videos",subject);
                 avi_out_raw = new VideoWriter_ab(filename, frame.cols, frame.rows);
 
                 string infix0 = infix;
                 infix0.append("_augmented");
-                filename = IOPath::getDataOutputFilename(infix0,"avi","videos");
+                filename = IOPath::getDataOutputFilename(infix0,"avi","videos",subject);
                 avi_out_augmented = new VideoWriter_ab(filename, frame.cols, frame.rows);
 
                 init_output = true;
@@ -155,6 +155,9 @@ void imageAcquisition::startAcquisition()
                     frame_r = calib->getRectifiedIm(frame_r,1);
                 }
 
+                // prevent repeated segmentations
+                if (idx == idx_prev && ctrl)    continue;
+
                 // add raw frame to avi export
                 avi_out_raw->addFrame(frame);
                 boost::thread* segmentationThread;
@@ -182,7 +185,7 @@ void imageAcquisition::startAcquisition()
                         seg->setColorScale(scale_min, scale_max);
                     }
 
-                    segmentationThread = new boost::thread(boost::bind(ThreadWrapper::startSegmentationThread, seg, frame, frame_on, frame_off, ch1_tau, ch2_tau, ch3_tau, ch4_tau));
+                    segmentationThread = new boost::thread(boost::bind(ThreadWrapper::startSegmentationThread, seg, frame, frame_on, frame_off, ch1_tau, ch2_tau, ch3_tau, ch4_tau, idx));
                 }
                 else
                 {
@@ -205,6 +208,8 @@ void imageAcquisition::startAcquisition()
                 segmentationThread->detach();
                 segmentationThread->~thread();
 
+                idx_prev = idx;
+
                 // display timer
                 clock_t timer_acquisition = clock();
                 double acq_timer = double(timer_acquisition - timer_acquisition_start);
@@ -219,8 +224,8 @@ void imageAcquisition::startAcquisition()
 
             // fullscreen
             // for now, only in vivo measurements
-            if (invivo)
-                setWindowProperty("Acquisition", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
+            //if (invivo)
+            setWindowProperty("Acquisition", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
 
             // cleanup
             if (!ctrl)
@@ -235,7 +240,7 @@ void imageAcquisition::startAcquisition()
                 if (!stereomode)
                 {
 
-                    std::string filename = IOPath::getDataOutputFilename(infix,"txt","txt");
+                    std::string filename = IOPath::getDataOutputFilename(infix,"txt","txt",subject);
                     IOTxtData::writeTxtFile(filename, seg );
 
                     for (int i=0; i<5; i++)
@@ -252,33 +257,33 @@ void imageAcquisition::startAcquisition()
                             infix0 = infix0.append(to_string(i));
                         }
 
-                        filename = IOPath::getDataOutputFilename(infix0,"jpg","figures");
+                        filename = IOPath::getDataOutputFilename(infix0,"jpg","figures",subject);
                         IOTxtData::writeJpgFile_mono(filename,seg,i);
                     }
 
 
                     string f = subject; f.append("_log_pulse_max"); f.append("_run").append(std::to_string(run_number));
-                    filename = IOPath::getDataOutputFilename(f,"txt","logs");
+                    filename = IOPath::getDataOutputFilename(f,"txt","logs",subject);
                     IOTxtData::writeLogFile(filename,log_pulse_max); log_pulse_max.clear();
 
                     f = subject; f.append("_log_pulse_min"); f.append("_run").append(std::to_string(run_number));
-                    filename = IOPath::getDataOutputFilename(f,"txt","logs");
+                    filename = IOPath::getDataOutputFilename(f,"txt","logs",subject);
                     IOTxtData::writeLogFile(filename,log_pulse_min); log_pulse_min.clear();
 
                     f = subject; f.append("_log_pulse_thres"); f.append("_run").append(std::to_string(run_number));
-                    filename = IOPath::getDataOutputFilename(f,"txt","logs");
+                    filename = IOPath::getDataOutputFilename(f,"txt","logs",subject);
                     IOTxtData::writeLogFile(filename,log_pulse_thres); log_pulse_thres.clear();
 
                     f = subject; f.append("_log_pulse_cur"); f.append("_run").append(std::to_string(run_number));
-                    filename = IOPath::getDataOutputFilename(f,"txt","logs");
+                    filename = IOPath::getDataOutputFilename(f,"txt","logs",subject);
                     IOTxtData::writeLogFile(filename,log_pulse_cur); log_pulse_cur.clear();
 
                     f = subject; f.append("_timer_frames"); f.append("_run").append(std::to_string(run_number));
-                    filename = IOPath::getDataOutputFilename(f,"txt","logs");
+                    filename = IOPath::getDataOutputFilename(f,"txt","logs",subject);
                     IOTxtData::writeLogFile(filename,timer_frames); timer_frames.clear();
 
                     f = subject; f.append("_timer_display"); f.append("_run").append(std::to_string(run_number));
-                    filename = IOPath::getDataOutputFilename(f,"txt","logs");
+                    filename = IOPath::getDataOutputFilename(f,"txt","logs",subject);
                     IOTxtData::writeLogFile(filename,timer_display); timer_display.clear();
 
                     f.clear();
@@ -303,10 +308,10 @@ void imageAcquisition::startAcquisition()
                     //std::string infix = subject;
                     //infix.append("_run");
                     //infix.append(std::to_string(run_number));
-                    std::string filename = IOPath::getDataOutputFilename(infix,"txt","txt");
+                    std::string filename = IOPath::getDataOutputFilename(infix,"txt","txt",subject);
                     IOTxtData::writeTxtFile(filename, seg_stereo );
 
-                    //filename = IOPath::getDataOutputFilename(infix,"jpg","figures");
+                    //filename = IOPath::getDataOutputFilename(infix,"jpg","figures",subject);
                     qDebug() << "before jpg";
                     for (int i=0; i<5; i++)
                     {
@@ -323,7 +328,7 @@ void imageAcquisition::startAcquisition()
                             infix0 = infix0.append(to_string(i));
                         }
 
-                        filename = IOPath::getDataOutputFilename(infix0,"jpg","figures");
+                        filename = IOPath::getDataOutputFilename(infix0,"jpg","figures",subject);
                         IOTxtData::writeJpgFile_stereo(filename,seg_stereo,i);
                     }
                     qDebug() << "after jpg";
@@ -398,8 +403,9 @@ void imageAcquisition::setInVivo(bool invivo)
 
 void imageAcquisition::setIdx(int idx)
 {
-    if(seg)
-        seg->setIdx(idx);
+    //if(seg)
+    //    seg->setIdx(idx);
+    this->idx = idx;
 }
 
 void imageAcquisition::setRadius(double radius)

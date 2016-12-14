@@ -38,6 +38,17 @@ string IOPath::getAppDir()
     return directory;
 }
 
+string IOPath::getDataOutputFilename(string infix, string suffix, string category, string subject)
+{
+    string path = getCategoryFolderPath(category, subject);
+    path.append("\\");
+    path.append(infix);
+    path.append(".");
+    path.append(suffix);
+    return path;
+}
+
+/*
 string IOPath::getDataOutputFilename(string infix, string suffix, string category)
 {
     string path = getAppDir();
@@ -69,7 +80,7 @@ string IOPath::getDataOutputFilename(string infix, string suffix, string categor
     path.append(suffix);
     return path;
 }
-
+*/
 string IOPath::getandincreaseCurrentCounter()
 {
     string cntfile = getAppDir();
@@ -97,6 +108,14 @@ string IOPath::getandincreaseCurrentCounter()
     return std::to_string(i_dec+1);
 }
 
+string IOPath::getDataDir()
+{
+    string path = getAppDir();
+    path.append(datapath);
+    path.append("\\");
+    return path;
+}
+
 
 string IOPath::getCurrentCounter()
 {
@@ -117,4 +136,33 @@ string IOPath::getCurrentCounter()
     infile.close();
 
     return sLine;
+}
+
+string IOPath::getCategoryFolderPath(string category, string tag)
+{
+    string path = getDataDir();
+    path.append(tag);
+
+    if (strcmp(category.c_str(),videopath.c_str())==0)
+    {
+        path.append("\\");
+        path.append(videopath);
+    }
+    if (strcmp(category.c_str(),txtpath.c_str())==0)
+    {
+        path.append("\\");
+        path.append(txtpath);
+    }
+    if (strcmp(category.c_str(),figurepath.c_str())==0)
+    {
+        path.append("\\");
+        path.append(figurepath);
+    }
+    if (strcmp(category.c_str(),logpath.c_str())==0)
+    {
+        path.append("\\");
+        path.append(logpath);
+    }
+
+    return path;
 }

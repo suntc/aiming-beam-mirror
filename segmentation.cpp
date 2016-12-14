@@ -163,7 +163,7 @@ void Segmentation::setColorScale(double mn, double mx)
 
 
 
-void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, double lt_ch1, double lt_ch2, double lt_ch3, double lt_ch4)
+void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, double lt_ch1, double lt_ch2, double lt_ch3, double lt_ch4, int idx)
 {
     if (!firstFrameSet)
     {
