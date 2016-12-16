@@ -12,7 +12,7 @@ class VideoPointGreyStereo : public VideoInputStereo
 {
 public:
     VideoPointGreyStereo();
-    cv::Mat getNextFrame(int camID);
+    void getNextFrame(cv::Mat &f1, cv::Mat &f2);
     bool lastFrame();
     int getNumberOfFrames();
     void disconnect();
@@ -27,8 +27,10 @@ private:
     BusManager busMgr;
     unsigned int numCameras;
     FlyCapture2::Error error;
-    Image rawImage;
-    Image rgbImage;
+    Image rawImage1;
+    Image rawImage2;
+    Image rgbImage1;
+    Image rgbImage2;
     bool connected = false;
     void PrintError( FlyCapture2::Error error );
     bool ready;

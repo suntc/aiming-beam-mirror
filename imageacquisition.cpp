@@ -30,9 +30,9 @@ void imageAcquisition::startupCamera(int ch, float thres)
 
     if (stereomode==false)
     {
-
         // check USB camera
         cam_usb = new VideoPointGrey();
+        //stereo_cam = new VideoPointGreyStereo();
         ready_usb = cam_usb->isConnected();
         // check frame grabber
         cam = new VideoEpiphan();
@@ -95,7 +95,7 @@ void imageAcquisition::startAcquisition()
 
             if (!seg_stereo && stereomode)
             {
-                seg_stereo  = new StereoSegmentation(calib, frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false);
+                //seg_stereo  = new StereoSegmentation(calib, frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false);
             }
 
             // initialization
@@ -145,9 +145,10 @@ void imageAcquisition::startAcquisition()
                 }
                 else
                 {
-                    frame = stereo_cam->getNextFrame(0);
+                   // frame = stereo_cam->getNextFrame(0);
 
-                    frame_r = stereo_cam->getNextFrame(1);
+                   // frame_r = stereo_cam->getNextFrame(1);
+                    stereo_cam->getNextFrame(frame, frame_r);
                     frame_l = frame.clone();
 
                     // if stereo camera pair is used, rectify images
@@ -467,7 +468,7 @@ void imageAcquisition::set_mode(bool stereomode)
         if (!seg_stereo)
         {
             // initialize segmentation
-            frame = stereo_cam->getNextFrame(0);
+            //frame = stereo_cam->getNextFrame(0);
             qDebug() << "invoke stereo 2.5";
             //seg_stereo  = new StereoSegmentation(calib, frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false);
         }
@@ -487,11 +488,14 @@ void imageAcquisition::captureFrame()
         if (inAcquisition)
         {
             // capture frame and store it in a temporary variable
-            Mat temp;
+            Mat temp;Mat temp2;
             if (invivo)
                 temp = cam->getNextFrame();
             else
-                temp = cam_usb->getNextFrame();
+                if (stereomode)
+                    cam_usb->getNextStereoFrame(temp,temp2);
+                else
+                    temp = cam_usb->getNextFrame();
 
             // check if there is an image. no image is passed if some parameters are changed through LV - image capture throws an error
             if (temp.empty())
@@ -504,6 +508,13 @@ void imageAcquisition::captureFrame()
             Mat frame_lab;
             cvtColor(temp, frame_lab, CV_BGR2Lab);
             extractChannel(frame_lab, frame_lab, 2);
+
+            Mat frame_lab2;
+            if (stereomode)
+            {
+                cvtColor(temp2, frame_lab2, CV_BGR2Lab);
+                extractChannel(frame_lab2, frame_lab2, 2);
+            }
 
             // check if object exists
             if (seg)

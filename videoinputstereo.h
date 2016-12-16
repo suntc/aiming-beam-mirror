@@ -9,7 +9,7 @@ class VideoInputStereo {
 public:
     VideoInputStereo(void) {};
     ~VideoInputStereo(void) {};
-    virtual cv::Mat getNextFrame(int camIND) = 0;
+    virtual void getNextFrame(cv::Mat &f1, cv::Mat &f2) = 0;
     virtual bool lastFrame() = 0;
     virtual int getNumberOfFrames() = 0;
     virtual void disconnect() = 0;

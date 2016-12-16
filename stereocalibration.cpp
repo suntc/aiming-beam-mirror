@@ -43,8 +43,9 @@ void StereoCalibration::captureCalibImages(VideoInputStereo * stereoInput, Size 
     while( true )
     {
 
-        im_left  = stereoInput->getNextFrame(0); //0
-        im_right = stereoInput->getNextFrame(1); //1
+        //im_left  = stereoInput->getNextFrame(0); //0
+        //im_right = stereoInput->getNextFrame(1); //1
+        stereoInput->getNextFrame(im_left, im_right);
 
         showStereo(im_left, im_right);
         k=waitKey(50);

@@ -102,13 +102,11 @@ void VideoPointGreyStereo::PrintError( Error error )
     error.PrintErrorTrace();
 }
 
-cv::Mat VideoPointGreyStereo::getNextFrame( int camID )
+void VideoPointGreyStereo::getNextFrame( cv::Mat &f1, cv::Mat &f2)
 {
     // Get the image
-    if (camID==0)
-        error = cam1.RetrieveBuffer( &rawImage );
-    else
-        error = cam2.RetrieveBuffer( &rawImage );
+    error = cam1.RetrieveBuffer( &rawImage1 );
+    error = cam2.RetrieveBuffer( &rawImage2 );
 
     if ( error != PGRERROR_OK )
     {
@@ -125,14 +123,14 @@ cv::Mat VideoPointGreyStereo::getNextFrame( int camID )
     //exit(0);
 
     // convert to rgb
-    rawImage.Convert( FlyCapture2::PIXEL_FORMAT_BGR, &rgbImage );
+    rawImage1.Convert( FlyCapture2::PIXEL_FORMAT_BGR, &rgbImage1 );
+    rawImage2.Convert( FlyCapture2::PIXEL_FORMAT_BGR, &rgbImage2 );
     // convert to OpenCV Mat
-    unsigned int rowBytes = (unsigned int) ((double)rgbImage.GetReceivedDataSize()/(double)rgbImage.GetRows());
-    cv::Mat image = cv::Mat(rgbImage.GetRows(), rgbImage.GetCols(), CV_8UC3, rgbImage.GetData(),rowBytes);
-    cv::Mat im_copy;
-    im_copy = image.clone();
+    unsigned int rowBytes = (unsigned int) ((double)rgbImage1.GetReceivedDataSize()/(double)rgbImage1.GetRows());
+    f1 = cv::Mat(rgbImage1.GetRows(), rgbImage1.GetCols(), CV_8UC3, rgbImage1.GetData(),rowBytes);
+    f2 = cv::Mat(rgbImage2.GetRows(), rgbImage2.GetCols(), CV_8UC3, rgbImage2.GetData(),rowBytes);
     //cv::resize(im_copy,im_copy,cv::Size(640,480));
-    return im_copy;
+    return;
 }
 
 

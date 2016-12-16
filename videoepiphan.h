@@ -9,10 +9,12 @@ class VideoEpiphan : public VideoInput
 public:
     VideoEpiphan();
     cv::Mat getNextFrame();
+    void getNextStereoFrame(cv::Mat &f1, cv::Mat &f2);
     bool lastFrame();
     int getNumberOfFrames();
     void disconnect();
     void set_resolution(int w, int h);
+    bool isStereoAvailable();
     bool isConnected();
 private:
     cv::VideoCapture cap;

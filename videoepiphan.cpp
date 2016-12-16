@@ -61,6 +61,12 @@ Mat VideoEpiphan::getNextFrame()
     return RGBimage;
 }
 
+void VideoEpiphan::getNextStereoFrame(Mat &f1, Mat &f2)
+{
+    // TODO: To be implemented
+    return;
+}
+
 bool VideoEpiphan::lastFrame()
 {
     return false;
@@ -84,4 +90,10 @@ void VideoEpiphan::set_resolution(int w, int h)
 bool VideoEpiphan::isConnected()
 {
     return cap.isOpened();
+}
+
+bool VideoEpiphan::isStereoAvailable()
+{
+    // TODO: To be implemented
+    return false;
 }
