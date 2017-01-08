@@ -11,10 +11,13 @@ void ThreadWrapper::startSegmentationThread(Segmentation *seg, cv::Mat frame, cv
     seg->startSegmentation(frame, frame_on, frame_off, lt1, lt2, lt3, lt4, idx);
 }
 
-void ThreadWrapper::startStereoSegmentationThread(StereoSegmentation *seg, cv::Mat frame_l, cv::Mat frame_r, cv::Mat frame_vis, double lt1, double lt2, double lt3, double lt4)
+void ThreadWrapper::startStereoSegmentationThread(StereoSegmentation *seg, cv::Mat frame, cv::Mat frame_on, cv::Mat frame_off, cv::Mat frame_on2, cv::Mat frame_off2, std::pair<double,double> lt12, std::pair<double,double> lt34, int idx)
 {
-    seg->startSegmentation(frame_l, frame_r, frame_vis, lt1, lt2, lt3, lt4);
-
+    double lt1 = lt12.first;
+    double lt2 = lt12.second;
+    double lt3 = lt34.first;
+    double lt4 = lt34.second;
+    seg->startSegmentation(frame, frame_on, frame_off, frame_on2, frame_off2, lt1, lt2, lt3, lt4, idx);
 }
 
 

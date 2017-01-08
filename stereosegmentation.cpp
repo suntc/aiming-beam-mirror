@@ -9,24 +9,40 @@
 
 using namespace cv;
 
-StereoSegmentation::StereoSegmentation(StereoCalibration * sc, cv::Mat frame, cv::Point ROI_point1, cv::Point ROI_point2, bool interp, int ch_number, bool interp_succ)
+StereoSegmentation::StereoSegmentation(StereoCalibration * sc, cv::Mat frame, cv::Point ROI_point1, cv::Point ROI_point2, bool interp, int ch_number, bool interp_succ, bool autoscale, int ansi)
 {
-    seg = new Segmentation(frame, ROI_point1, ROI_point2, interp, ch_number, interp_succ, sc, true); //TODO: pass autoscale here
+    seg = new Segmentation(frame, ROI_point1, ROI_point2, interp, ch_number, interp_succ, sc, autoscale); //TODO: pass autoscale here
     this->calib = sc;
 
     Size s = frame.size();
     res_x = s.width;
     res_y = s.height;
-    ch1_overlay = new Overlay(res_x,res_y,2,3, 99999); //TODO: Pass ansi limit here
-    ch2_overlay = new Overlay(res_x,res_y,2,3, 99999);
-    ch3_overlay = new Overlay(res_x,res_y,2,3, 99999);
-    ch4_overlay = new Overlay(res_x,res_y,2,3, 99999);
+    //this->scale_auto=autoscale;
+    double lower_bound_;
+    double upper_bound_;
+    if (autoscale==true)
+    {
+        lower_bound_ = 2;
+        upper_bound_ = 3;
+    }
+    else
+    {
+        lower_bound_ = 1;
+        upper_bound_ = 6;
+    }
+    // Initialize Overlays
+    ch1_overlay = new Overlay(res_x,res_y,lower_bound_,upper_bound_, ansi); //TODO: Pass ansi limit here
+    ch2_overlay = new Overlay(res_x,res_y,lower_bound_,upper_bound_, ansi);
+    ch3_overlay = new Overlay(res_x,res_y,lower_bound_,upper_bound_, ansi);
+    ch4_overlay = new Overlay(res_x,res_y,lower_bound_,upper_bound_, ansi);
 
     switchChannel(ch_number);
 }
 
-void StereoSegmentation::startSegmentation(Mat frame_l, Mat frame_r, Mat frame_vis, double lt_ch1, double lt_ch2, double lt_ch3, double lt_ch4)
+void StereoSegmentation::startSegmentation(Mat frame_vis, Mat frame_on, Mat frame_off, Mat frame_on2, Mat frame_off2, double lt_ch1, double lt_ch2, double lt_ch3, double lt_ch4, int idx)
 {
+
+    qDebug() << "startseg";
 
     if (!firstFrameSet)
     {
@@ -34,7 +50,13 @@ void StereoSegmentation::startSegmentation(Mat frame_l, Mat frame_r, Mat frame_v
         firstFrameSet = true;
     }
     // do segmentation in the left videoframe
-    //seg->startSegmentation(frame_l, lt_ch1, lt_ch2, lt_ch3, lt_ch4);
+    seg->startSegmentation(frame_vis, frame_on, frame_off, lt_ch1, lt_ch2, lt_ch3, lt_ch4, idx);
+
+    //const char * filename1 = "im_on.jpg";
+    //cvSaveImage(filename1, &(IplImage(frame_on)));
+
+    //const char * filename2 = "im_off.jpg";
+    //cvSaveImage(filename2, &(IplImage(frame_off)));
 
     ellipse(frame_vis, calib->getRectifiedPoint(Point(seg->last_x,seg->last_y),0), Size(5,5), 0, 0, 360, Scalar( 0, 0, 255 ), 3, 8, 0);
 
@@ -54,8 +76,11 @@ void StereoSegmentation::startSegmentation(Mat frame_l, Mat frame_r, Mat frame_v
         break;
     }
     overlay->drawCurrentVal(lifetime,current_channel);
+
     // if beam is found in the left frame, search for it in the right frame
     // we assume that both frames are rectified (calibration required, see stereocalibration.cpp)
+    qDebug() << "before last active";
+    qDebug() << seg->last_active;
     if (seg->last_active)
     {
 
@@ -91,7 +116,7 @@ void StereoSegmentation::startSegmentation(Mat frame_l, Mat frame_r, Mat frame_v
             if (lt_ch4<ch4_overlay->getLowerBound() && lt_ch4>0)
                 ch4_overlay->setNewInterval(floor(lt_ch4),ch4_overlay->getUpperBound());
         }
-
+qDebug() << "lifetime limits adapted";
 
         int height = seg->last_radius*2+20; //*1.5;
         Point2d beam_pos(seg->last_x, seg->last_y);
@@ -108,24 +133,36 @@ void StereoSegmentation::startSegmentation(Mat frame_l, Mat frame_r, Mat frame_v
         // define ROI for finding the beam in the right videoframe
         int xfrom = (beam_pos.x - disparity_range < 0 ) ? 0  : beam_pos.x-disparity_range;
         int yfrom = (beam_pos.y - ceil(height/2)  < 0 ) ? 0  : beam_pos.y-ceil(height/2);
-        int xto   = (beam_pos.x  > frame_l.cols-1 ) ? frame_l.cols-1 : beam_pos.x;
-        int yto   = (beam_pos.y + ceil(height/2)  > frame_l.rows-1 ) ? frame_l.rows-1 : beam_pos.y+ceil(height/2);
+        int xto   = (beam_pos.x  > frame_vis.cols-1 ) ? frame_vis.cols-1 : beam_pos.x;
+        int yto   = (beam_pos.y + ceil(height/2)  > frame_vis.rows-1 ) ? frame_vis.rows-1 : beam_pos.y+ceil(height/2);
         Rect corrArea(xfrom, yfrom, xto-xfrom, yto-yfrom);
 
-        // cut correlation area from right frame
-        Mat frame_r_cut = frame_r(corrArea);
+        x0 = xfrom;
+        y0 = yfrom;
+        x1 = xto-xfrom;
+        y1 = yto-yfrom;
+
+        //Mat frame_cut = frame(corrArea);
+qDebug() << "before pulsed";
+        // invoke segmentation
         int x, y, radius;
+        double correlation = seg->pulsedSegmentation(frame_on2, frame_off2, corrArea, x, y, radius);
+qDebug() << "after pulsed";
+        // cut correlation area from right frame
+        //Mat frame_r_cut = frame_r(corrArea);
+
 
         //const char * filename1 = "segment.jpg";
         //cvSaveImage(filename1, &(IplImage(frame_r_cut)));
 
+        //double correlation = 0; //seg->doubleRingSegmentation(frame_r_cut, x, y, radius);
 
-        double correlation = 0; //seg->doubleRingSegmentation(frame_r_cut, x, y, radius);
-
-        qDebug() << lifetime;
-        qDebug() << correlation;
+        //qDebug() << lifetime;
+        //qDebug() << correlation;
+        qDebug() << "before activate";
         if (correlation>(seg->thres))
         {
+            qDebug() << "activate";
 
             // both beam positions are available
 

@@ -28,23 +28,26 @@ void imageAcquisition::startupCamera(int ch, float thres)
     // startup one or two cameras
     // and check if at least one camera is connected
 
+    // check frame grabber
+    cam = new VideoEpiphan();
+    ready_fg = cam->isConnected();
+
     if (stereomode==false)
     {
         // check USB camera
         cam_usb = new VideoPointGrey();
-        //stereo_cam = new VideoPointGreyStereo();
         ready_usb = cam_usb->isConnected();
-        // check frame grabber
-        cam = new VideoEpiphan();
-        ready_fg = cam->isConnected();
 
         ready = ready_fg || ready_usb;
     }
     else
-    {
-        stereo_cam = new VideoPointGreyStereo();
-        if (stereo_cam->isConnected())
-            ready = true;
+    { //TODO: just check for stereo
+        // check stereo USB camera pair
+        //stereo_cam = new VideoPointGreyStereo();
+        cam_usb = new VideoPointGrey();
+        ready_usb = cam_usb->isConnected();
+
+        ready = ready_fg || ready_usb;
     }
 
     channel = ch; // channel to be displayed
@@ -80,8 +83,8 @@ void imageAcquisition::startAcquisition()
     VideoOutput *avi_out_raw = nullptr;
 
     // stereo pair
-    Mat frame_r;
-    Mat frame_l;
+    //Mat frame_r;
+    //Mat frame_l;
 
     while (thread)
     {
@@ -95,7 +98,9 @@ void imageAcquisition::startAcquisition()
 
             if (!seg_stereo && stereomode)
             {
-                //seg_stereo  = new StereoSegmentation(calib, frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false);
+                qDebug() << "segm init";
+                seg_stereo  = new StereoSegmentation(calib, frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false, scale_auto, ansi);
+                qDebug() << "segm init done";
             }
 
             // initialization
@@ -123,38 +128,44 @@ void imageAcquisition::startAcquisition()
             {
 
                 // get frame
-                if (!stereomode)
+                //if (!stereomode)
+                //{
+
+                // make sure we have something in readout and reference frame before segmentation
+                if (!ref_frame.empty() && !readout_frame.empty())
                 {
 
-                    // make sure we have something in readout and reference frame before segmentation
-                    if (!ref_frame.empty() && !readout_frame.empty())
+                    if (!writing)
                     {
-                        if (!writing)
+                        frame_on = ref_frame;//.clone();
+                        frame_off = readout_frame;//.clone();
+                        frame = vis_frame;//.clone(); //frame_off.clone();
+                        if (stereomode)
                         {
-                            frame_on = ref_frame;//.clone();
-                            frame_off = readout_frame;//.clone();
-                            frame = vis_frame;//.clone(); //frame_off.clone();
+                            frame_on2 = ref_frame2;
+                            frame_off2 = readout_frame2;
                         }
-                        else
-                            continue;
                     }
                     else
-                    {
                         continue;
-                    }
                 }
                 else
                 {
+                    continue;
+                }
+                //}
+                //else
+                //{
                    // frame = stereo_cam->getNextFrame(0);
 
                    // frame_r = stereo_cam->getNextFrame(1);
-                    stereo_cam->getNextFrame(frame, frame_r);
-                    frame_l = frame.clone();
+                    //stereo_cam->getNextFrame(frame, frame_r);
+                    //frame_l = frame.clone();
 
                     // if stereo camera pair is used, rectify images
-                    frame_l = calib->getRectifiedIm(frame_l,0);
-                    frame_r = calib->getRectifiedIm(frame_r,1);
-                }
+                    //frame_l = calib->getRectifiedIm(frame_l,0);
+                    //frame_r = calib->getRectifiedIm(frame_r,1);
+                //}
 
                 // prevent repeated segmentations
                 if (idx == idx_prev && ctrl)    continue;
@@ -162,7 +173,6 @@ void imageAcquisition::startAcquisition()
                 // add raw frame to avi export
                 avi_out_raw->addFrame(frame);
                 boost::thread* segmentationThread;
-
                 if (!stereomode)
                 {
                     // set correlation threshold
@@ -195,8 +205,11 @@ void imageAcquisition::startAcquisition()
                     // detection channel to be displayed
                     seg_stereo->switchChannel(channel);
                     //boost::thread segmentationThread(ThreadWrapper::startStereoSegmentationThread, seg_stereo, frame_l, frame_r, frame, ch1_tau, ch2_tau, ch3_tau, ch4_tau);
-                    segmentationThread = new boost::thread(boost::bind(ThreadWrapper::startStereoSegmentationThread, seg_stereo, frame_l, frame_r, frame, ch1_tau, ch2_tau, ch3_tau, ch4_tau));
-
+                    std::pair <double,double> lt12;
+                    lt12 = std::make_pair(ch1_tau,ch2_tau);
+                    std::pair <double,double> lt34;
+                    lt34 = std::make_pair(ch3_tau,ch4_tau);
+                    segmentationThread = new boost::thread(boost::bind(ThreadWrapper::startStereoSegmentationThread, seg_stereo, frame, frame_on, frame_off, frame_on2, frame_off2, lt12, lt34, idx));
                 }
                 // clear lifetimes
                 set_lifetime(NO_LIFETIME,1);
@@ -313,7 +326,6 @@ void imageAcquisition::startAcquisition()
                     IOTxtData::writeTxtFile(filename, seg_stereo );
 
                     //filename = IOPath::getDataOutputFilename(infix,"jpg","figures",subject);
-                    qDebug() << "before jpg";
                     for (int i=0; i<5; i++)
                     {
                         string infix0;
@@ -332,10 +344,9 @@ void imageAcquisition::startAcquisition()
                         filename = IOPath::getDataOutputFilename(infix0,"jpg","figures",subject);
                         IOTxtData::writeJpgFile_stereo(filename,seg_stereo,i);
                     }
-                    qDebug() << "after jpg";
                     delete(seg_stereo);
                     qDebug() << "invoke stereo 2";
-                    seg_stereo = new StereoSegmentation(calib, frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false);
+                    //seg_stereo = new StereoSegmentation(calib, frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false);
                 }
 
 
@@ -485,17 +496,20 @@ void imageAcquisition::captureFrame()
 
     while (thread)
     {
+
         if (inAcquisition)
         {
+
+
             // capture frame and store it in a temporary variable
             Mat temp;Mat temp2;
             if (invivo)
                 temp = cam->getNextFrame();
             else
-                if (stereomode)
-                    cam_usb->getNextStereoFrame(temp,temp2);
-                else
+                if (!stereomode)
                     temp = cam_usb->getNextFrame();
+                else
+                    cam_usb->getNextStereoFrame(temp,temp2);
 
             // check if there is an image. no image is passed if some parameters are changed through LV - image capture throws an error
             if (temp.empty())
@@ -516,45 +530,101 @@ void imageAcquisition::captureFrame()
                 extractChannel(frame_lab2, frame_lab2, 2);
             }
 
+            qDebug() << "before seg check";
             // check if object exists
-            if (seg)
+            if (seg || seg_stereo)
             {
-                // draw rectangle to look for mean intensity.
-                // eventually we need a way to lock this, so that the area is the same
-                // for both frames
-                cv::Rect area(seg->x0, seg->y0, seg->x1, seg->y1);
-                // average intensity in the 2nd channel
-                cv::Scalar meanblueint = mean(frame_lab(area));
-                double blueint = meanblueint.val[0];
+                qDebug() << "after seg check";
+                double blue_mx;
+                double blue_mn;
+                double blueint;
+                if(!stereomode)
+                {
+                    // draw rectangle to look for mean intensity.
+                    // eventually we need a way to lock this, so that the area is the same
+                    // for both frames
+                    cv::Rect area(seg->x0, seg->y0, seg->x1, seg->y1);
+                    // average intensity in the 2nd channel
+                    cv::Scalar meanblueint = mean(frame_lab(area));
+                    blueint = meanblueint.val[0];
 
-                // store blue level in vector
-                blues[counter] = blueint;
+                    // store blue level in vector
+                    blues[counter] = blueint;
 
-                // find min and max in vector
-                double blue_mx = *max_element(std::begin(blues), std::end(blues));
-                double blue_mn = *min_element(std::begin(blues), std::end(blues));
+                    // find min and max in vector
+                    blue_mx = *max_element(std::begin(blues), std::end(blues));
+                    blue_mn = *min_element(std::begin(blues), std::end(blues));
 
-                // amplitude
-                double span = blue_mx - blue_mn;
+                    // amplitude
+                    double span = blue_mx - blue_mn;
 
-                // calculate thrshold to find aiming beam
-                double level = 0.8;
-                thres = 0.1 * thres + 0.9 * ((level * span) + blue_mn);
+                    // calculate thrshold to find aiming beam
+                    double level = 0.8;
+                    thres = 0.1 * thres + 0.9 * ((level * span) + blue_mn);
 
-                // lock reading while writing;
-                writing = true;
+                    // lock reading while writing;
+                    writing = true;
 
-                if (blueint < thres - 0.1*span)
-                    ref_frame = temp.clone();
-                else if (blueint > thres + 0.*span)
-                    readout_frame = temp.clone();
+                    if (blueint < thres - 0.1*span)
+                        ref_frame = temp.clone();
+                    else if (blueint > thres + 0.*span)
+                    {
+                        readout_frame = temp.clone();
+                    }
+                    else
+                    {
+                        // do nothing
+                        //readout_frame = tempcopy;
+                    }
+                    vis_frame = temp.clone();
+                    writing = false;
+                }
                 else
                 {
-                    // do nothing
-                    //readout_frame = tempcopy;
+                    qDebug() << "Flag1";
+                    qDebug() << seg_stereo->seg->x0;
+                    qDebug() << "Flag1.5";
+                    cv::Rect area(seg_stereo->seg->x0, seg_stereo->seg->y0, seg_stereo->seg->x1, seg_stereo->seg->y1);
+                    // average intensity in the 2nd channel
+                    cv::Scalar meanblueint = mean(frame_lab(area));
+                    blueint = meanblueint.val[0];
+                    qDebug() << "Flag2";
+                    // store blue level in vector
+                    blues[counter] = blueint;
+
+                    // find min and max in vector
+                    blue_mx = *max_element(std::begin(blues), std::end(blues));
+                    blue_mn = *min_element(std::begin(blues), std::end(blues));
+                    qDebug() << "Flag3";
+                    // amplitude
+                    double span = blue_mx - blue_mn;
+
+                    // calculate thrshold to find aiming beam
+                    double level = 0.8;
+                    thres = 0.1 * thres + 0.9 * ((level * span) + blue_mn);
+qDebug() << "Flag4";
+                    // lock reading while writing;
+                    writing = true;
+qDebug() << "Flag5";
+                    if (blueint < thres - 0.1*span)
+                    {
+                        ref_frame = temp.clone();
+                        ref_frame2 = temp.clone();
+                    }
+                    else if (blueint > thres + 0.*span)
+                    {
+                        readout_frame = temp.clone();
+                        readout_frame2 = temp.clone();
+                    }
+                    else
+                    {
+                        // do nothing
+                        //readout_frame = tempcopy;
+                    }
+                    vis_frame = temp.clone();
+                    writing = false;
+   qDebug() << "Flag6";
                 }
-                vis_frame = temp.clone();
-                writing = false;
 
                 log_pulse_thres.push_back(thres);
                 log_pulse_max.push_back(blue_mx);
@@ -573,7 +643,7 @@ void imageAcquisition::captureFrame()
 
                 counter++;
                 if (counter == nframes) counter = 0;
-
+   qDebug() << "Flag7";
             }
             else
             {
@@ -583,11 +653,12 @@ void imageAcquisition::captureFrame()
                 vis_frame = temp.clone();
                 writing = false;
             }
-
+ qDebug() << "Flag8";
             temp.release();
             frame_lab.release();
-
+ qDebug() << "Flag9";
             Sleep(1); // let it rest for ~10 ms. otherwise it is likely to crash
+             qDebug() << "Flag10";
         } else {
 
             // clear timer

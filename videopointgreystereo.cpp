@@ -92,8 +92,8 @@ VideoPointGreyStereo::VideoPointGreyStereo()
     //                exit(-1);
     //            }
 
-    cam1.SetVideoModeAndFrameRate(FlyCapture2::VIDEOMODE_1280x960RGB, FlyCapture2::FRAMERATE_30 );
-    cam2.SetVideoModeAndFrameRate(FlyCapture2::VIDEOMODE_1280x960RGB, FlyCapture2::FRAMERATE_30 );
+    //cam1.SetVideoModeAndFrameRate(FlyCapture2::VIDEOMODE_1280x960RGB, FlyCapture2::FRAMERATE_30 );
+    //cam2.SetVideoModeAndFrameRate(FlyCapture2::VIDEOMODE_1280x960RGB, FlyCapture2::FRAMERATE_30 );
     connected = true;
 }
 
@@ -102,7 +102,7 @@ void VideoPointGreyStereo::PrintError( Error error )
     error.PrintErrorTrace();
 }
 
-void VideoPointGreyStereo::getNextFrame( cv::Mat &f1, cv::Mat &f2)
+void VideoPointGreyStereo::getNextStereoFrame( cv::Mat &f1, cv::Mat &f2)
 {
     // Get the image
     error = cam1.RetrieveBuffer( &rawImage1 );

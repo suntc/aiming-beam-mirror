@@ -12,7 +12,7 @@ class VideoPointGreyStereo : public VideoInputStereo
 {
 public:
     VideoPointGreyStereo();
-    void getNextFrame(cv::Mat &f1, cv::Mat &f2);
+    void getNextStereoFrame(cv::Mat &f1, cv::Mat &f2);
     bool lastFrame();
     int getNumberOfFrames();
     void disconnect();

@@ -14,9 +14,13 @@ public:
     cv::Mat frame;
     cv::Mat ref_frame;
     cv::Mat readout_frame;
+    cv::Mat ref_frame2;
+    cv::Mat readout_frame2;
     cv::Mat vis_frame;
     cv::Mat frame_on;
     cv::Mat frame_off;
+    cv::Mat frame_on2;
+    cv::Mat frame_off2;
     bool ctrl = false;
     bool thread = false;
     bool inAcquisition = false;

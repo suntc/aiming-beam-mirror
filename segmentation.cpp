@@ -26,6 +26,8 @@ Segmentation::Segmentation(Mat frame, cv::Point point1, cv::Point point2, bool i
     this->scale_auto=autoscale;
     stereo_setup = true;
     this->calib = calib;
+
+    // Setup segmentation (shared with 3D measurement constructor)
     init(frame, point1, point2, interp, ch_number, interp_succ);
 }
 
@@ -217,7 +219,7 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
     x1 = xto-xfrom;
     y1 = yto-yfrom;
 
-    Mat frame_cut = frame(corrArea);
+    //Mat frame_cut = frame(corrArea);
 
     // invoke segmentation
     correlation = pulsedSegmentation(frame_on, frame_off, corrArea, x, y, radius);
@@ -330,7 +332,7 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
         ellipse(frame, Point(x,y), Size(5,5), 0, 0, 360, Scalar( 255, 255, 255 ), 3, 8, 0);
     }
 
-    frame_cut.release();
+    //frame_cut.release();
 
     return;
 }
