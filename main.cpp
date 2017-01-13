@@ -96,7 +96,7 @@ void startup(GUIupdater *ui)
     bool lt_auto = true; // automatic scale
     int lt_min = 1;     // min limit
     int lt_max = 6;     // max limit
-    int channel = 2;    // channel to be displayed
+    int channel = 2;    // channel to be displayed, default 2
     int ansi = 5;       // ansi limit, as the maximum number of frames that a single pixel can be imaged
 
     // Unused variables in the processing, but called in the code. Keep them for now
@@ -562,7 +562,7 @@ void startup(GUIupdater *ui)
                 conn.write(set_ack(key, "1"));
 
                 acq->set_mode(true);
-                calib = new StereoCalibration(acq->stereo_cam, Size(9,6), 0.25); //0.5
+                calib = new StereoCalibration(acq->cam_usb, Size(9,6), 0.25); //0.5
                 if (calib->isReady())
                 {
                     string filename = IOPath::getAppDir();

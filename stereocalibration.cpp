@@ -22,13 +22,13 @@ StereoCalibration::StereoCalibration(string filename)
     RX = getRotationAngleBetweenCameras();
 }
 
-StereoCalibration::StereoCalibration(VideoInputStereo * stereoInput, Size boardSize, float squareSize)
+StereoCalibration::StereoCalibration(VideoInput * stereoInput, Size boardSize, float squareSize)
 {
     // Size(9,6), 0.5,
     captureCalibImages(stereoInput, boardSize, squareSize);
 }
 
-void StereoCalibration::captureCalibImages(VideoInputStereo * stereoInput, Size boardSize, float squareSize)
+void StereoCalibration::captureCalibImages(VideoInput * stereoInput, Size boardSize, float squareSize)
 {
     Mat im_left;
     Mat im_right;
@@ -45,7 +45,7 @@ void StereoCalibration::captureCalibImages(VideoInputStereo * stereoInput, Size 
 
         //im_left  = stereoInput->getNextFrame(0); //0
         //im_right = stereoInput->getNextFrame(1); //1
-        stereoInput->getNextFrame(im_left, im_right);
+        stereoInput->getNextStereoFrame(im_left, im_right);
 
         showStereo(im_left, im_right);
         k=waitKey(50);
@@ -776,5 +776,6 @@ Mat StereoCalibration::projectTo3D_(Mat left, Mat right)
 
     return XYZ;
 }
+
 
 

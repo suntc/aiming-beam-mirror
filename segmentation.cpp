@@ -164,9 +164,10 @@ void Segmentation::setColorScale(double mn, double mx)
 }
 
 
-
 void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, double lt_ch1, double lt_ch2, double lt_ch3, double lt_ch4, int idx)
 {
+    qDebug() << "channel";
+    qDebug()  << current_channel;
     if (!firstFrameSet)
     {
         //save the first frame
@@ -321,7 +322,6 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
     if (!stereo_setup)
         addWeighted( frame, alpha, overlay->mergeOverlay(frame), beta, 0.0, frame);
 
-
     // show marker, depending on the background either in black or white
     if (frame.at<Vec3b>(y,x)[0]+frame.at<Vec3b>(y,x)[1]+frame.at<Vec3b>(y,x)[2]>383)
     {
@@ -445,5 +445,5 @@ Segmentation::~Segmentation()
     delete ch3_overlay;
     delete ch4_overlay;
     delete overlay;
-    delete calib;
+    //delete calib;
 }

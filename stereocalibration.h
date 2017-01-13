@@ -1,7 +1,7 @@
 #ifndef STEREOCALIBRATION_H
 #define STEREOCALIBRATION_H
-#include "videoinputstereo.h"
-#include "videopointgreystereo.h"
+#include "videoinput.h"
+#include "videopointgrey.h"
 
 using namespace std;
 
@@ -9,7 +9,7 @@ class StereoCalibration
 {
 public:
     StereoCalibration(string filename);
-    StereoCalibration(VideoInputStereo * stereoInput, cv::Size boardSize, float squareSize);
+    StereoCalibration(VideoInput * stereoInput, cv::Size boardSize, float squareSize);
     void saveCalibration(string filename);
     void loadCalibration(string filename);
     bool isReady();
@@ -28,7 +28,7 @@ public:
     void showStereo(cv::Mat l, cv::Mat r);
 
 private:
-    void captureCalibImages(VideoInputStereo * stereoInput, cv::Size boardSize, float squareSize);
+    void captureCalibImages(VideoInput * stereoInput, cv::Size boardSize, float squareSize);
     void StereoCalibration::calibrate(const vector<string> imagelist, cv::Size boardSize, float squareSize, bool displayCorners, bool useCalibrated, bool showRectified);
 
 

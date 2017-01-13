@@ -18,7 +18,7 @@ public:
     void switchChannel(int channel);
 
     Segmentation* seg;
-    Overlay* height_profile = NULL;
+    Overlay* height_profile = 0;
     vector<double> log_height;
     vector<double> log_real_x;
     vector<double> log_real_y;
@@ -43,10 +43,12 @@ public:
     int y1;
 
 private:
-    int disparity_range = 700; // to be adapted to configuration and resolution
+    int disparity_range = 1000; // (def 700) to be adapted to configuration and resolution
     StereoCalibration* calib;
     bool firstFrameSet;
     int current_channel=1;
+
+    int x, y, radius;
 };
 
 #endif // STEREOSEGMENTATION_H

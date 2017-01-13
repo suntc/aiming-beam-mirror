@@ -54,10 +54,13 @@ public:
     cv::Mat firstFrame;
 
     int x0; int y0; int x1; int y1;
+    int area_dim;
 
-private:
     cv::Point ROI_left_upper;
     cv::Point ROI_right_lower;
+
+private:
+
     void init(cv::Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ);
 
     bool firstFrameSet = false;
@@ -72,8 +75,6 @@ private:
     double last_lt_ch2;
     double last_lt_ch3;
     double last_lt_ch4;
-
-    int area_dim;
 
     int size_struct_elem;
 
