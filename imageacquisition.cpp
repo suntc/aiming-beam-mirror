@@ -217,7 +217,7 @@ void imageAcquisition::startAcquisition()
                     // set correlation threshold
                     //seg_stereo->setThreshold(threshold);
                     // detection channel to be displayed
-                    seg_stereo->switchChannel(channel); //channel
+                    seg_stereo->switchChannel(0); //channel
                     //boost::thread segmentationThread(ThreadWrapper::startStereoSegmentationThread, seg_stereo, frame_l, frame_r, frame, ch1_tau, ch2_tau, ch3_tau, ch4_tau);
                     std::pair <double,double> lt12;
                     lt12 = std::make_pair(ch1_tau,ch2_tau);
@@ -226,10 +226,10 @@ void imageAcquisition::startAcquisition()
                     segmentationThread = new boost::thread(boost::bind(ThreadWrapper::startStereoSegmentationThread, seg_stereo, frame, calib->getRectifiedIm(frame_on,0), calib->getRectifiedIm(frame_off,0), calib->getRectifiedIm(frame_on2,1), calib->getRectifiedIm(frame_off2,1), lt12, lt34, idx));
                 }
                 // clear lifetimes
-                set_lifetime(NO_LIFETIME,1);
-                set_lifetime(NO_LIFETIME,2);
-                set_lifetime(NO_LIFETIME,3);
-                set_lifetime(NO_LIFETIME,4);
+                //set_lifetime(NO_LIFETIME,1);
+                //set_lifetime(NO_LIFETIME,2);
+                //set_lifetime(NO_LIFETIME,3);
+                //set_lifetime(NO_LIFETIME,4);
 
                 // thread
                 segmentationThread->join();
@@ -453,6 +453,9 @@ void imageAcquisition::shutdownCamera()
 void imageAcquisition::setInVivo(bool invivo)
 {
     this->invivo = invivo;
+    load_calib();
+
+
 }
 
 void imageAcquisition::setIdx(int idx)
@@ -501,6 +504,11 @@ void imageAcquisition::set_resolution(int w, int h)
 void imageAcquisition::set_mode(bool stereomode)
 {
     this->stereomode = stereomode;
+
+}
+
+void imageAcquisition::load_calib()
+{
     startupCamera(channel, threshold);
 
     if (stereomode)
@@ -509,9 +517,13 @@ void imageAcquisition::set_mode(bool stereomode)
         {
             // initialize calibration
             string filename = IOPath::getAppDir();
-            filename.append("Calibration\\stereocalibration");
+            if (invivo)
+                filename.append("Calibration\\Calibration_invivo");
+            else
+                filename.append("Calibration\\Calibration_exvivo");
+            //filename.append("Calibration\\stereocalibration");
             string counter = IOPath::getCurrentCounter();
-            filename.append(counter);
+            //filename.append(counter);
             filename.append(".yml");
             qDebug() << "using calibration file:";
             qDebug() << filename.c_str();
@@ -548,7 +560,11 @@ void imageAcquisition::captureFrame()
             // capture frame and store it in a temporary variable
             Mat temp;Mat temp2;
             if (invivo)
-                temp = cam->getNextFrame();
+                //temp = cam->getNextFrame();
+                if (!stereomode)
+                    temp = cam->getNextFrame();
+                else
+                    cam->getNextStereoFrame(temp,temp2);
             else
                 if (!stereomode)
                     temp = cam_usb->getNextFrame();

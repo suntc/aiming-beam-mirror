@@ -50,6 +50,7 @@ public:
     void set_mode(bool stereomode);
     void setAimingBeam(bool aiming_beam);
     void setInVivo(bool invivo);
+    void load_calib();
     bool getFGReady();
     bool getUSBReady();
     std::string subject;

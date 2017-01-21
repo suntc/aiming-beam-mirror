@@ -566,13 +566,18 @@ void startup(GUIupdater *ui)
                 if (calib->isReady())
                 {
                     string filename = IOPath::getAppDir();
-                    filename.append("Calibration\\stereocalibration");
+
+                    if (mode == 1)
+                        filename.append("Calibration\\Calibration_exvivo");
+                    else if (mode == 2)
+                        filename.append("Calibration\\Calibration_invivo");
+
                     string counter = IOPath::getandincreaseCurrentCounter();
                     filename.append(counter);
                     filename.append(".yml");
-                    //qDebug() << filename.c_str();
+                    qDebug() << filename.c_str();
 
-                    calib->saveCalibration(filename);
+                    //calib->saveCalibration(filename);
                 }
                 else
                 {

@@ -13,6 +13,7 @@ StereoSegmentation::StereoSegmentation(StereoCalibration * sc, cv::Mat frame, cv
 {
     seg = new Segmentation(frame, ROI_point1, ROI_point2, interp, ch_number, interp_succ, sc, autoscale); //TODO: pass autoscale here
     this->calib = sc;
+    //current_channel = 0;
 
     Size s = frame.size();
     res_x = s.width;
@@ -60,6 +61,8 @@ void StereoSegmentation::startSegmentation(Mat frame_vis, Mat frame_on, Mat fram
     // do segmentation in the left videoframe
     qDebug() << "stereosegm before segm";
     seg->startSegmentation(frame_vis, frame_on, frame_off, lt_ch1, lt_ch2, lt_ch3, lt_ch4, idx);
+    imshow("frameon", frame_on);
+    imshow("frameoff", frame_off);
 qDebug() << "stereosegm after segm";
     //const char * filename1 = "im_on.jpg";
     //cvSaveImage(filename1, &(IplImage(frame_on)));
@@ -70,6 +73,7 @@ qDebug() << "stereosegm after segm";
     ellipse(frame_vis, calib->getRectifiedPoint(Point(seg->last_x,seg->last_y),0), Size(5,5), 0, 0, 360, Scalar( 0, 0, 255 ), 3, 8, 0);
 qDebug() << current_channel;
     double lifetime = 0;
+    //current_channel = 0;
     if (current_channel!=0)
     {
         switch(current_channel) {
@@ -245,11 +249,11 @@ qDebug() << "stereosegm6";
             //qDebug() << "Profile Overlay";
             //qDebug() << height;
             qDebug() << "stereosegm7";
-            height_profile->drawCircle(beam_pos_vis.x,beam_pos_vis.y,seg->last_radius*0.3,height);
-            ch1_overlay->drawCircle(beam_pos_vis.x,beam_pos_vis.y,seg->last_radius*0.3,lt_ch1);
-            ch2_overlay->drawCircle(beam_pos_vis.x,beam_pos_vis.y,seg->last_radius*0.3,lt_ch2);
-            ch3_overlay->drawCircle(beam_pos_vis.x,beam_pos_vis.y,seg->last_radius*0.3,lt_ch3);
-            ch4_overlay->drawCircle(beam_pos_vis.x,beam_pos_vis.y,seg->last_radius*0.3,lt_ch4);
+            height_profile->drawCircle(beam_pos_vis.x,beam_pos_vis.y,seg->last_radius*0.5,height);
+            ch1_overlay->drawCircle(beam_pos_vis.x,beam_pos_vis.y,seg->last_radius*0.5,lt_ch1);
+            ch2_overlay->drawCircle(beam_pos_vis.x,beam_pos_vis.y,seg->last_radius*0.5,lt_ch2);
+            ch3_overlay->drawCircle(beam_pos_vis.x,beam_pos_vis.y,seg->last_radius*0.5,lt_ch3);
+            ch4_overlay->drawCircle(beam_pos_vis.x,beam_pos_vis.y,seg->last_radius*0.5,lt_ch4);
 
             log_height.push_back(height);
             log_real_x.push_back(res.at<Vec4d>(0,0)[0] / res.at<Vec4d>(0,0)[3]);

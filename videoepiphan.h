@@ -17,10 +17,12 @@ public:
     bool isStereoAvailable();
     bool isConnected();
 private:
-    cv::VideoCapture cap;
+    cv::VideoCapture cap1;
+    cv::VideoCapture cap2;
     int frameHeight;
     int frameWidth;
     cv::Mat RGBimage;
+    bool stereoAvailable;
 };
 
 #endif // VIDEOEPIPHAN_H
