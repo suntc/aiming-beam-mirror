@@ -31,6 +31,7 @@ public:
     bool stereomode = false;
     bool aiming_beam_bool = false;
     bool invivo = false;
+    bool is_synchronized = true;
     int idx = 0;
     int idx_prev = 0;
     int channel = 1;

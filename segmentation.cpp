@@ -166,8 +166,8 @@ void Segmentation::setColorScale(double mn, double mx)
 
 void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, double lt_ch1, double lt_ch2, double lt_ch3, double lt_ch4, int idx)
 {
-    qDebug() << "channel";
-    qDebug()  << current_channel;
+    //qDebug() << "channel";
+    //qDebug()  << current_channel;
     if (!firstFrameSet)
     {
         //save the first frame
@@ -208,8 +208,8 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
     int radius = 1;
     float correlation;
 
-    int xfrom = (last_x-area_dim < ROI_left_upper.x ) ? ROI_left_upper.x  : last_x-area_dim;
-    int yfrom = (last_y-area_dim < ROI_left_upper.y ) ? ROI_left_upper.y  : last_y-area_dim;
+    int xfrom = (last_x-area_dim < ROI_left_upper.x) ? ROI_left_upper.x  : last_x-area_dim;
+    int yfrom = (last_y-area_dim < ROI_left_upper.y) ? ROI_left_upper.y  : last_y-area_dim;
     int xto   = (last_x+area_dim > ROI_right_lower.x) ? ROI_right_lower.x : last_x+area_dim;
     int yto   = (last_y+area_dim > ROI_right_lower.y) ? ROI_right_lower.y : last_y+area_dim;
 
@@ -222,8 +222,10 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
 
     //Mat frame_cut = frame(corrArea);
 
+    float x1,y1;
     // invoke segmentation
-    correlation = pulsedSegmentation(frame_on, frame_off, corrArea, x, y, radius);
+    correlation = pulsedSegmentation(frame_on, frame_off, corrArea, x1, y1, radius);
+    x = (int) x1; y = (int) y1;
 
     // update beam position
     if (correlation > thres)
@@ -320,16 +322,18 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
     float beta = 0.5;
 
     if (!stereo_setup)
+    {
         addWeighted( frame, alpha, overlay->mergeOverlay(frame), beta, 0.0, frame);
 
-    // show marker, depending on the background either in black or white
-    if (frame.at<Vec3b>(y,x)[0]+frame.at<Vec3b>(y,x)[1]+frame.at<Vec3b>(y,x)[2]>383)
-    {
-        ellipse(frame, Point(x,y), Size(5,5), 0, 0, 360, Scalar( 0, 0, 0 ), 3, 8, 0);
-    }
-    else
-    {
-        ellipse(frame, Point(x,y), Size(5,5), 0, 0, 360, Scalar( 255, 255, 255 ), 3, 8, 0);
+        // show marker, depending on the background either in black or white
+        if (frame.at<Vec3b>(y,x)[0]+frame.at<Vec3b>(y,x)[1]+frame.at<Vec3b>(y,x)[2]>383)
+        {
+            ellipse(frame, Point(x,y), Size(5,5), 0, 0, 360, Scalar( 0, 0, 0 ), 3, 8, 0);
+        }
+        else
+        {
+            ellipse(frame, Point(x,y), Size(5,5), 0, 0, 360, Scalar( 255, 255, 255 ), 3, 8, 0);
+        }
     }
 
     //frame_cut.release();
@@ -347,7 +351,7 @@ void Segmentation::setRadius(double radius)
     radius_factor = radius;
 }
 
-float Segmentation::pulsedSegmentation(cv::Mat frame_on, cv::Mat frame_off, Rect corrArea, int &x, int &y, int &radius)
+float Segmentation::pulsedSegmentation(cv::Mat frame_on, cv::Mat frame_off, Rect corrArea, float &x, float &y, int &radius)
 {
 
     Mat lab_on, lab_off;

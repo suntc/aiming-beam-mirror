@@ -573,7 +573,7 @@ void startup(GUIupdater *ui)
                         filename.append("Calibration\\Calibration_invivo");
 
                     string counter = IOPath::getandincreaseCurrentCounter();
-                    filename.append(counter);
+                    //filename.append(counter);
                     filename.append(".yml");
                     qDebug() << filename.c_str();
 

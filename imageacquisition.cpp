@@ -127,10 +127,6 @@ void imageAcquisition::startAcquisition()
             if (inAcquisition)
             {
 
-                // get frame
-                //if (!stereomode)
-                //{
-
                 // make sure we have something in readout and reference frame before segmentation
                 if (!ref_frame.empty() && !readout_frame.empty())
                 {
@@ -153,19 +149,7 @@ void imageAcquisition::startAcquisition()
                 {
                     continue;
                 }
-                //}
-                //else
-                //{
-                   // frame = stereo_cam->getNextFrame(0);
 
-                   // frame_r = stereo_cam->getNextFrame(1);
-                    //stereo_cam->getNextFrame(frame, frame_r);
-                    //frame_l = frame.clone();
-
-                    // if stereo camera pair is used, rectify images
-                    //frame_l = calib->getRectifiedIm(frame_l,0);
-                    //frame_r = calib->getRectifiedIm(frame_r,1);
-                //}
 
                 // prevent repeated segmentations
                 if (idx == idx_prev && ctrl)    continue;
@@ -200,25 +184,26 @@ void imageAcquisition::startAcquisition()
                 }
                 else
                 {
-                    //frame_on   = calib->getRectifiedIm(frame_on,0);
-                    //frame_off  = calib->getRectifiedIm(frame_off,0);
-                    //frame_on2  = calib->getRectifiedIm(frame_on2,1);
-                    //frame_off2 = calib->getRectifiedIm(frame_off2,1);
 
-                   // const char * filename1 = "frame_on1.jpg";
-                   // cvSaveImage(filename1, &(IplImage(frame_on)));
-                   // const char * filename2 = "frame_off1.jpg";
-                   // cvSaveImage(filename2, &(IplImage(frame_off)));
-                   // const char * filename3 = "frame_on2.jpg";
-                   // cvSaveImage(filename3, &(IplImage(frame_on2)));
-                   // const char * filename4 = "frame_off2.jpg";
-                   // cvSaveImage(filename4, &(IplImage(frame_off2)));
-
-                    // set correlation threshold
-                    //seg_stereo->setThreshold(threshold);
                     // detection channel to be displayed
-                    seg_stereo->switchChannel(0); //channel
-                    //boost::thread segmentationThread(ThreadWrapper::startStereoSegmentationThread, seg_stereo, frame_l, frame_r, frame, ch1_tau, ch2_tau, ch3_tau, ch4_tau);
+                    seg_stereo->switchChannel(channel);
+
+                    // set ansi limit
+                    seg_stereo->setAnsi(ansi);
+
+                    // scale radius
+                    seg_stereo->seg->setRadius(radius);
+
+                    // set autoscale
+                    seg_stereo->setAutoScale(scale_auto);
+
+                    if (!scale_auto)
+                    {
+                        // if not autoscale, set scale limits
+                        seg_stereo->setColorScale(scale_min, scale_max);
+                    }
+
+
                     std::pair <double,double> lt12;
                     lt12 = std::make_pair(ch1_tau,ch2_tau);
                     std::pair <double,double> lt34;
@@ -251,8 +236,6 @@ void imageAcquisition::startAcquisition()
             imshow("Acquisition", frame);
 
             // fullscreen
-            // for now, only in vivo measurements
-            //if (invivo)
             setWindowProperty("Acquisition", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
 
             // cleanup
@@ -265,127 +248,103 @@ void imageAcquisition::startAcquisition()
                 avi_out_augmented->closeFile();
                 avi_out_raw->closeFile();
 
-                // TODO: Most parts can be merged
+                delete(avi_out_augmented);
+                delete(avi_out_raw);
+
+                //log files
+                std::string filename = IOPath::getDataOutputFilename(infix,"txt","txt",subject);
                 if (!stereomode)
+                    IOTxtData::writeTxtFile(filename, seg);
+                else
+                    IOTxtData::writeTxtFile(filename, seg_stereo);
+
+                for (int i=0; i<6; i++)
                 {
-
-                    std::string filename = IOPath::getDataOutputFilename(infix,"txt","txt",subject);
-                    IOTxtData::writeTxtFile(filename, seg );
-
-                    for (int i=0; i<5; i++)
+                    string infix0;
+                    infix0 = infix;
+                    if (i == 0)
                     {
-                        string infix0;
-                        infix0 = infix;
-                        if (i == 0)
-                        {
-                            infix0 = infix0.append("_raw");
-                        }
-                        else
-                        {
-                            infix0 = infix0.append("_CH");
-                            infix0 = infix0.append(to_string(i));
-                        }
-
-                        filename = IOPath::getDataOutputFilename(infix0,"jpg","figures",subject);
-                        IOTxtData::writeJpgFile_mono(filename,seg,i);
+                        infix0 = infix0.append("_raw");
+                    }
+                    else if(i == 5)
+                    {
+                        if (!stereomode)   continue;
+                        infix0 = infix0.append("_profile");
+                    }
+                    else
+                    {
+                        infix0 = infix0.append("_CH");
+                        infix0 = infix0.append(to_string(i));
                     }
 
+                    filename = IOPath::getDataOutputFilename(infix0,"jpg","figures",subject);
+                    if (!stereomode)
+                        IOTxtData::writeJpgFile_mono(filename,seg,i);
+                    else
+                        IOTxtData::writeJpgFile_stereo(filename,seg_stereo,i);
+                }
 
-                    string f = subject; f.append("_log_pulse_max"); f.append("_run").append(std::to_string(run_number));
+                string f = subject; f.append("_log_pulse_max"); f.append("_run").append(std::to_string(run_number));
+                filename = IOPath::getDataOutputFilename(f,"txt","logs",subject);
+                IOTxtData::writeLogFile(filename,log_pulse_max); log_pulse_max.clear();
+
+                f = subject; f.append("_log_pulse_min"); f.append("_run").append(std::to_string(run_number));
+                filename = IOPath::getDataOutputFilename(f,"txt","logs",subject);
+                IOTxtData::writeLogFile(filename,log_pulse_min); log_pulse_min.clear();
+
+                f = subject; f.append("_log_pulse_thres"); f.append("_run").append(std::to_string(run_number));
+                filename = IOPath::getDataOutputFilename(f,"txt","logs",subject);
+                IOTxtData::writeLogFile(filename,log_pulse_thres); log_pulse_thres.clear();
+
+                f = subject; f.append("_log_pulse_cur"); f.append("_run").append(std::to_string(run_number));
+                filename = IOPath::getDataOutputFilename(f,"txt","logs",subject);
+                IOTxtData::writeLogFile(filename,log_pulse_cur); log_pulse_cur.clear();
+
+                f = subject; f.append("_timer_frames"); f.append("_run").append(std::to_string(run_number));
+                filename = IOPath::getDataOutputFilename(f,"txt","logs",subject);
+                IOTxtData::writeLogFile(filename,timer_frames); timer_frames.clear();
+
+                f = subject; f.append("_timer_display"); f.append("_run").append(std::to_string(run_number));
+                filename = IOPath::getDataOutputFilename(f,"txt","logs",subject);
+                IOTxtData::writeLogFile(filename,timer_display); timer_display.clear();
+
+                if (stereomode)
+                {
+                    f = subject; f.append("_synchronized"); f.append("_run").append(std::to_string(run_number));
                     filename = IOPath::getDataOutputFilename(f,"txt","logs",subject);
-                    IOTxtData::writeLogFile(filename,log_pulse_max); log_pulse_max.clear();
+                    IOTxtData::writeLogFile(filename,seg_stereo->log_synchronized); seg_stereo->log_synchronized.clear();
 
-                    f = subject; f.append("_log_pulse_min"); f.append("_run").append(std::to_string(run_number));
+                    f = subject; f.append("_disparity_y"); f.append("_run").append(std::to_string(run_number));
                     filename = IOPath::getDataOutputFilename(f,"txt","logs",subject);
-                    IOTxtData::writeLogFile(filename,log_pulse_min); log_pulse_min.clear();
+                    IOTxtData::writeLogFile(filename,seg_stereo->log_disparity_y); seg_stereo->log_disparity_y.clear();
 
-                    f = subject; f.append("_log_pulse_thres"); f.append("_run").append(std::to_string(run_number));
-                    filename = IOPath::getDataOutputFilename(f,"txt","logs",subject);
-                    IOTxtData::writeLogFile(filename,log_pulse_thres); log_pulse_thres.clear();
+                }
 
-                    f = subject; f.append("_log_pulse_cur"); f.append("_run").append(std::to_string(run_number));
-                    filename = IOPath::getDataOutputFilename(f,"txt","logs",subject);
-                    IOTxtData::writeLogFile(filename,log_pulse_cur); log_pulse_cur.clear();
+                f.clear();
+                filename.clear();
 
-                    f = subject; f.append("_timer_frames"); f.append("_run").append(std::to_string(run_number));
-                    filename = IOPath::getDataOutputFilename(f,"txt","logs",subject);
-                    IOTxtData::writeLogFile(filename,timer_frames); timer_frames.clear();
+                // clear matrices
+                frame_on = Mat();
+                frame_off = Mat();
+                frame_on2 = Mat();
+                frame_off2 = Mat();
+                vis_frame = Mat();
+                ref_frame = Mat();
+                ref_frame2 = Mat();
+                readout_frame = Mat();
+                readout_frame2 = Mat();
 
-                    f = subject; f.append("_timer_display"); f.append("_run").append(std::to_string(run_number));
-                    filename = IOPath::getDataOutputFilename(f,"txt","logs",subject);
-                    IOTxtData::writeLogFile(filename,timer_display); timer_display.clear();
-
-                    f.clear();
-                    filename.clear();
-
-                    frame_on = Mat();
-                    frame_off = Mat();
-                    frame_on2 = Mat();
-                    frame_off2 = Mat();
-                    vis_frame = Mat();
-                    ref_frame = Mat();
-                    ref_frame2 = Mat();
-                    readout_frame = Mat();
-                    readout_frame2 = Mat();
-
+                // restart segmentation objects
+                if (!stereomode)
+                {
                     delete seg;
                     seg = nullptr;
-
-                    delete(avi_out_augmented);
-                    delete(avi_out_raw);
-                    //seg = new Segmentation(frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false, scale_auto, ansi);
-
                 }
                 else
                 {
-                    //std::string infix = subject;
-                    //infix.append("_run");
-                    //infix.append(std::to_string(run_number));
-                    std::string filename = IOPath::getDataOutputFilename(infix,"txt","txt",subject);
-                    IOTxtData::writeTxtFile(filename, seg_stereo );
-
-                    //filename = IOPath::getDataOutputFilename(infix,"jpg","figures",subject);
-                    for (int i=0; i<5; i++)
-                    {
-                        string infix0;
-                        if (i==0)
-                        {
-                            infix0 = infix;
-                            infix0 = infix0.append("_profile");
-                        }
-                        else
-                        {
-                            infix0 = infix;
-                            infix0 = infix0.append("_CH");
-                            infix0 = infix0.append(to_string(i));
-                        }
-
-                        filename = IOPath::getDataOutputFilename(infix0,"jpg","figures",subject);
-                        IOTxtData::writeJpgFile_stereo(filename,seg_stereo,i);
-                    }
-                    delete(seg_stereo);
+                    delete seg_stereo;
                     seg_stereo = nullptr;
-
-                    frame_on = Mat();
-                    frame_off = Mat();
-                    frame_on2 = Mat();
-                    frame_off2 = Mat();
-                    vis_frame = Mat();
-                    ref_frame = Mat();
-                    ref_frame2 = Mat();
-                    readout_frame = Mat();
-                    readout_frame2 = Mat();
-
-                    delete seg;
-                    seg = nullptr;
-
-                    delete(avi_out_augmented);
-                    delete(avi_out_raw);
-                    //qDebug() << "invoke stereo 2";
-                    //seg_stereo = new StereoSegmentation(calib, frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false);
                 }
-
-
 
             }
             else
@@ -693,33 +652,50 @@ void imageAcquisition::captureFrame()
                     // lock reading while writing;
                     writing = true;
 //qDebug() << "Flag5";
+                    bool beam1_on = false;
+                    bool beam1_reject = false;
                     if (blueint < thres - 0.1*span)
                     {
+                        beam1_on = true;
                         ref_frame = temp.clone();
                     }
                     else if (blueint > thres + 0.*span)
                     {
+                        beam1_on = false;
                         readout_frame = temp.clone();
                     }
                     else
                     {
+                        beam1_reject = true;
                         // do nothing
                         //readout_frame = tempcopy;
                     }
-
+                    is_synchronized = false;
                     if (blueint2 < thres2 - 0.1*span2)
                     {
+                        if (beam1_on)
+                            is_synchronized = true;
+
                         ref_frame2 = temp2.clone();
                     }
                     else if (blueint2 > thres2 + 0.*span2)
                     {
+                        if (!beam1_on)
+                            is_synchronized = true;
+
                         readout_frame2 = temp2.clone();
                     }
                     else
                     {
+                        is_synchronized = false;
+
                         // do nothing
                         //readout_frame = tempcopy;
                     }
+                    if(beam1_reject)
+                        is_synchronized = false;
+
+                    seg_stereo->set_synchronized(is_synchronized);
 
                     vis_frame = temp.clone();
                     writing = false;

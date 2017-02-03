@@ -140,8 +140,6 @@ void Overlay::drawCircle(int x, int y, int radius, double val)
 {
     // highly efficient overlay computation :)
 
-    //qDebug() << stereo_mode;
-
     if (val<0)
         return;
 
@@ -157,16 +155,13 @@ void Overlay::drawCircle(int x, int y, int radius, double val)
         //qDebug() << x;
     }
 
-
     // make sure that the beam is inside the overlay
     if (x-radius<0 || y-radius<0 || x+radius+1>accumulator.cols || y+radius+1>accumulator.rows)
         return;
 
-
     Point pt1;
     pt1.x = radius;
     pt1.y = radius;
-
 
     // cut segment from accumulator
     Rect segmArea(x-radius, y-radius, 2*radius+1, 2*radius+1);

@@ -16,6 +16,10 @@ public:
     void startSegmentation(cv::Mat frame_vis, cv::Mat frame_on, cv::Mat frame_off, cv::Mat frame_on2, cv::Mat frame_off2, double lt_ch1, double lt_ch2, double lt_ch3, double lt_ch4, int idx);
     void setThreshold(double thres);
     void switchChannel(int channel);
+    void setAnsi(int ansi);
+    void setColorScale(double mn, double mx);
+    void setAutoScale(bool autoscale);
+    void set_synchronized(bool is_synchronized);
 
     Segmentation* seg;
     Overlay* height_profile = 0;
@@ -36,6 +40,8 @@ public:
     vector<int> log_coords_x;
     vector<int> log_coords_y;
     vector<int> log_radius;
+    vector<double> log_synchronized;
+    vector<double> log_disparity_y;
 
     int x0;
     int y0;
@@ -43,12 +49,15 @@ public:
     int y1;
 
 private:
-    int disparity_range = 1000; // (def 700) to be adapted to configuration and resolution
+    int disparity_range = 200; // (def 700) to be adapted to configuration and resolution
     StereoCalibration* calib;
     bool firstFrameSet;
     int current_channel=1;
+    bool scale_auto;
+    bool is_synchronized=false;
 
-    int x, y, radius;
+    int radius;
+    float x,y;
 };
 
 #endif // STEREOSEGMENTATION_H

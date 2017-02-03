@@ -253,6 +253,8 @@ void IOTxtData::writeJpgFile_stereo(string filename, StereoSegmentation * seg, i
 
     cv::Mat c1;
 
+    if(channel==0)  // raw image, no overlay
+        c1 = seg->firstFrame;
     if(channel==1)
         addWeighted( seg->firstFrame, 0.5, seg->ch1_overlay->mergeOverlay(seg->firstFrame), 0.5, 0.0, c1);
     if(channel==2)
@@ -261,7 +263,7 @@ void IOTxtData::writeJpgFile_stereo(string filename, StereoSegmentation * seg, i
         addWeighted( seg->firstFrame, 0.5, seg->ch3_overlay->mergeOverlay(seg->firstFrame), 0.5, 0.0, c1);
     if(channel==4)
         addWeighted( seg->firstFrame, 0.5, seg->ch4_overlay->mergeOverlay(seg->firstFrame), 0.5, 0.0, c1);
-    if(channel==0)
+    if(channel==5)  // profile
         addWeighted( seg->firstFrame, 0.5, seg->height_profile->mergeOverlay(seg->firstFrame), 0.5, 0.0, c1);
 
     const char * filename1 = filename.c_str();
