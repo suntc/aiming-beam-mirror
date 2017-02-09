@@ -15,7 +15,7 @@ public:
     void disconnect();
     void set_resolution(int w, int h);
     bool isStereoAvailable();
-    bool isConnected();
+    bool isConnected(int camID);
 private:
     cv::VideoCapture cap1;
     cv::VideoCapture cap2;

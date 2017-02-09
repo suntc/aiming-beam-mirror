@@ -114,21 +114,17 @@ void startup(GUIupdater *ui)
     int previous_mode = -2;
     ui->setMode(mode);
 
+    bool usb_1_ready = false;
+    bool usb_2_ready = false;
+    bool fg_1_ready = false;
+    bool fg_2_ready = false;
+
     // initialize image acquisition object (this is for the exvivo camera only. may need to be changed in the future)
     imageAcquisition *acq = new imageAcquisition(stereomode);
     StereoCalibration *calib;
 
-    // check for USB camera
-    if (!acq->getUSBReady())
-    {
-        ui->throwError("USB camera not detected");
-    }
-
-    // check for Fragme grabber
-    if (!acq->getFGReady())
-    {
-        ui->throwError("Frame grabber not detected");
-    }
+    // look for usb cameras and frame grabber
+    ui->setCameraStatus(acq->getUSBOpen(0), acq->getUSBOpen(1), acq->getFGOpen(0), acq->getFGOpen(1));
 
     // If none of the cameras are detected
     while (!acq->ready)
@@ -147,25 +143,22 @@ void startup(GUIupdater *ui)
 
         // try to reconnect to camera
         acq->startupCamera(channel, threshold);
+
     }
 
     // at least one camera was detected. No error to be displayed
     ui->setError(false);
+    ui->setCameraStatus(acq->getUSBOpen(0), acq->getUSBOpen(1), acq->getFGOpen(0), acq->getFGOpen(1));
 
-    // camera is up and running. define default resolution
-    //acq->set_resolution(width, height);
+    // check stereomode
+    if (!acq->getUSBOpen(0) && !acq->getUSBOpen(1))
+        ui->throwError("USB cameras not available");
+    else
+       if (!acq->getUSBOpen(0) || !acq->getUSBOpen(1))
+            ui->throwError("Stereo mode (USB) not available");
 
-    // Check if USB camera is ready
-    if (acq->getUSBReady())
-    {
-        ui->throwError("USB camera OK");
-    }
-
-    // check for Fragme grabber
-    if (acq->getFGReady())
-    {
-        ui->throwError("Frame grabber OK");
-    }
+    if (!acq->getFGOpen(0) || !acq->getFGOpen(1))
+        ui->throwError("Stereo mode (frame grabber) not available");
 
     // initialize TCP/IP communication. It will wait here until the communication is established
     TCP_IP conn (ip, port);

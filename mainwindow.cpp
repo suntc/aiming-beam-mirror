@@ -19,6 +19,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(updater, SIGNAL(requestReady(bool)), this, SLOT(ready(bool)));
     QObject::connect(updater, SIGNAL(requestError(bool)), this, SLOT(error(bool)));
     QObject::connect(updater, SIGNAL(outputError(std::string)), this, SLOT(log(std::string)));
+    QObject::connect(updater, SIGNAL(cameraStatus(bool,bool,bool,bool)), this, SLOT(camera(bool, bool, bool, bool)));
 }
 
 void MainWindow::init()
@@ -26,6 +27,9 @@ void MainWindow::init()
 
     // initialize as offline
     offline(true);
+
+    // initialize cameras UI indicators
+    camera(false, false, false, false);
 }
 
 void MainWindow::setMode(int mode)
@@ -74,6 +78,26 @@ void MainWindow::offline(bool status)
         ui->offline_btn->setStyleSheet("background-color: red");
         ui->offline_label->setStyleSheet("font-weight:normal");
     }
+}
+
+void MainWindow::camera(bool usb_1, bool usb_2, bool fg_1, bool fg_2)
+{
+    // top usb camera
+    QString ss = (usb_1) ? "green" : "red";
+    ui->USB_1_ready->setStyleSheet("background-color: " + ss);
+
+    // side usb camera
+    ss = (usb_2) ? "green" : "red";
+    ui->USB_2_ready->setStyleSheet("background-color: " + ss);
+
+    // frame grabber 1
+    ss = (fg_1) ? "green" : "red";
+    ui->FG_1_ready->setStyleSheet("background-color: " + ss);
+
+    // frame grabber 2
+    ss = (fg_2) ? "green" : "red";
+    ui->FG_2_ready->setStyleSheet("background-color: " + ss);
+
 }
 
 void MainWindow::standby(bool status)

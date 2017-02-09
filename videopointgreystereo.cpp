@@ -150,7 +150,7 @@ void VideoPointGreyStereo::disconnect()
     cam2.Disconnect();
 }
 
-bool VideoPointGreyStereo::isConnected()
+bool VideoPointGreyStereo::isConnected(int camID)
 {
     return connected;
 }

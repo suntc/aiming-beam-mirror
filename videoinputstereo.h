@@ -13,7 +13,7 @@ public:
     virtual bool lastFrame() = 0;
     virtual int getNumberOfFrames() = 0;
     virtual void disconnect() = 0;
-    virtual bool isConnected() = 0;
+    virtual bool isConnected(int camID) = 0;
 };
 
 #endif // VIDEOINPUTSTEREO_H

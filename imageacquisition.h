@@ -11,16 +11,20 @@
 class imageAcquisition
 {
 public:
+
+    imageAcquisition(bool stereomode);
+
     cv::Mat frame;
-    cv::Mat ref_frame;
-    cv::Mat readout_frame;
-    cv::Mat ref_frame2;
-    cv::Mat readout_frame2;
+    cv::Mat ab_frame;
+    cv::Mat bg_frame;
+    cv::Mat ab_frame2;
+    cv::Mat bg_frame2;
     cv::Mat vis_frame;
     cv::Mat frame_on;
     cv::Mat frame_off;
     cv::Mat frame_on2;
     cv::Mat frame_off2;
+
     bool ctrl = false;
     bool thread = false;
     bool inAcquisition = false;
@@ -36,12 +40,16 @@ public:
     int idx_prev = 0;
     int channel = 1;
     double threshold = 0.96;
-    imageAcquisition(bool stereomode);
-    void startAcquisition();
-    void captureFrame();
+    int run_number;
+    std::string subject;
+
     VideoInput *cam;
     VideoInput *cam_usb;
     VideoInputStereo *stereo_cam;
+    Segmentation *seg;
+    StereoSegmentation* seg_stereo;
+    StereoCalibration *calib;
+
     void startupCamera(int ch, float thres);
     void shutdownCamera();
     void setIdx(int idx);
@@ -54,12 +62,10 @@ public:
     void load_calib();
     bool getFGReady();
     bool getUSBReady();
-    std::string subject;
-    int run_number;
-    Segmentation *seg;
-    StereoSegmentation* seg_stereo;
-    StereoCalibration *calib;
-
+    bool getUSBOpen(int camID);
+    bool getFGOpen(int camID);
+    void startAcquisition();
+    void captureFrame();
     void setAutoScale(bool autoscale);
     void setScale(double mn, double mx);
     void setAnsi(int ansi);
@@ -68,7 +74,6 @@ public:
     std::vector<double> log_pulse_min;
     std::vector<double> log_pulse_thres;
     std::vector<double> log_pulse_cur;
-
     std::vector<double> timer_display;
     std::vector<double> timer_frames;
 
@@ -87,6 +92,7 @@ private:
     double radius = 1.0;
     bool scale_auto;
     int ansi = 999999;
+
 };
 
 #endif // IMAGEACQUISITION_H

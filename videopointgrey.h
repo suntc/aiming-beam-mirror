@@ -17,7 +17,7 @@ public:
     bool lastFrame();
     int getNumberOfFrames();
     void disconnect();
-    bool isConnected();
+    bool isConnected(int camID);
     bool isStereoAvailable();
     void set_resolution(int w, int h);
 private:

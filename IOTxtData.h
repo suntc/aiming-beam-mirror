@@ -23,6 +23,8 @@ public:
     static void writeJpgFile_stereo(string filename, StereoSegmentation * seg, int channel );
     static void writeJpgFile_mono(string filename, Segmentation * seg, int channel );
     static void writeLogFile(string filename, vector<double> log);
+    static void writeSegmentationLog(string filename, vector<double> time, vector<double> log_pulse_thres, vector<double> log_pulse_min, vector<double> log_pulse_max, vector<double> log_pulse_cur);
+    static void writeStereoLog(string filename, vector<double> disparity_y, vector<int> is_sync);
 };
 
 #endif // IOTxtData_H

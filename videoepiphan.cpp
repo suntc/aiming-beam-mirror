@@ -8,58 +8,52 @@ using namespace cv;
 
 VideoEpiphan::VideoEpiphan()
 {
-    bool found=0;
+    // assume there is no stereo
+    stereoAvailable = false;
+
     try
     {
+        // try to open first frame grabber
         cap1.open(0);
-        qDebug() << "frame grabber 1 OK";
+
+        if (cap1.isOpened())
+        {
+            // set resolution first frame grabber
+            cap1.set(CV_CAP_PROP_FRAME_WIDTH,1280);
+            cap1.set(CV_CAP_PROP_FRAME_HEIGHT,720);
+
+            // get resolution
+            frameHeight = cap1.get(CV_CAP_PROP_FRAME_HEIGHT); // Height in pixels of the frame
+            frameWidth = cap1.get(CV_CAP_PROP_FRAME_WIDTH); // Width in pixels of the frame
+
+            RGBimage.create(frameWidth, frameHeight, CV_8UC3);
+        }
     }
     catch(...)
     {
-        qDebug() << "no frame grabber";
+        return;
     }
-    stereoAvailable = true;
+
+    // check second frame grabber
     try
     {
+        // open second frame grabber
         cap2.open(1);
-        qDebug() << "frame grabber 2 OK";
+
+        if (cap2.isOpened())
+        {
+            stereoAvailable = true;
+
+            // set resolution
+            cap2.set(CV_CAP_PROP_FRAME_WIDTH,1280);
+            cap2.set(CV_CAP_PROP_FRAME_HEIGHT,720);
+        }
     }
     catch(...)
     {
-        qDebug() << "no second frame grabber";
-        stereoAvailable = false;
-    }
-
-    cap1.set(CV_CAP_PROP_FRAME_WIDTH,1280);
-    cap1.set(CV_CAP_PROP_FRAME_HEIGHT,720);
-    if(stereoAvailable)
-    {
-        cap2.set(CV_CAP_PROP_FRAME_WIDTH,1280);
-        cap2.set(CV_CAP_PROP_FRAME_HEIGHT,720);
-    }
-
-    if(!cap1.isOpened()) // If camera cannot be opened display message and return
-    {
-        QMessageBox messageBox;
-        messageBox.critical(0, "Error", "Camera initialization failed!");
-        messageBox.setFixedSize(500,200);
-    }
-    else
-    {
-        frameHeight = cap1.get(CV_CAP_PROP_FRAME_HEIGHT); // Height in pixels of the frame
-        frameWidth = cap1.get(CV_CAP_PROP_FRAME_WIDTH); // Width in pixels of the frame
-
-        RGBimage.create(frameWidth, frameHeight, CV_8UC3);
-
-        //if(cap2.isOpened())
-        //    stereoAvailable = true;
-        //else
-        //    stereoAvailable = false;
+        return;
 
     }
-
-
-
 
 }
 
@@ -103,9 +97,19 @@ void VideoEpiphan::set_resolution(int w, int h)
     return;
 }
 
-bool VideoEpiphan::isConnected()
+bool VideoEpiphan::isConnected(int camID)
 {
-    return cap1.isOpened();
+    bool isOpen = false;
+    switch (camID)
+    {
+    case 0: // first camera
+        isOpen = cap1.isOpened();
+        break;
+    case 1: // second camera
+        isOpen = cap2.isOpened();
+    }
+
+    return isOpen;
 }
 
 bool VideoEpiphan::isStereoAvailable()

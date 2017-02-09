@@ -24,6 +24,7 @@ public:
     void test_invivo(bool status);
     void acquisition_invivo(bool status);
     void offline(bool status);
+
     void closeEvent(QCloseEvent *event);
     GUIupdater *updater = new GUIupdater();
     ~MainWindow();
@@ -36,6 +37,7 @@ public slots:
     void ready(bool status);
     void error(bool status);
     void log(std::string msg);
+    void camera(bool, bool, bool, bool);
 
 
 };

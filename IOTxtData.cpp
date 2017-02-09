@@ -9,7 +9,7 @@
 #include <opencv2/imgcodecs.hpp>
 #include "segmentation.h"
 #include "stereosegmentation.h"
-
+#include <QFile>
 #include <QDebug>
 
 using namespace std;
@@ -127,6 +127,7 @@ void IOTxtData::writeTxtFile(string filename, Segmentation * seg)
     vector<double> frame_noms = seg->log_frame_no;
 
     vector<double>::iterator it_frame_noms = frame_noms.begin();
+    vector<double>::iterator it_timer = seg->log_timer.begin();
     vector<int>::iterator it_pos_x = seg->log_coords_x.begin();
     vector<int>::iterator it_pos_y = seg->log_coords_y.begin();
     vector<int>::iterator it_rad = seg->log_radius.begin();
@@ -138,7 +139,7 @@ void IOTxtData::writeTxtFile(string filename, Segmentation * seg)
 
     while( it_frame_noms != frame_noms.end() )
     {
-        outputFile <<std::to_string((int) *it_frame_noms) << "\t" << *it_ch1 << "\t" << *it_ch2 << "\t" << *it_ch3 << "\t" << *it_ch4 << "\t" << *it_pos_x << "\t" << *it_pos_y << "\t" << *it_rad << "\n";
+        outputFile <<std::to_string((int) *it_frame_noms) << "\t" << *it_ch1 << "\t" << *it_ch2 << "\t" << *it_ch3 << "\t" << *it_ch4 << "\t" << *it_pos_x << "\t" << *it_pos_y << "\t" << *it_rad << "\t" << *it_timer << "\n";
         it_frame_noms++; it_pos_x++; it_pos_y++; it_rad++;
         it_ch1++; it_ch2++; it_ch3++; it_ch4++;
     }
@@ -147,6 +148,7 @@ void IOTxtData::writeTxtFile(string filename, Segmentation * seg)
     frame_noms.clear();
     return;
 }
+
 
 void IOTxtData::writeLogFile(string filename, vector<double> log)
 {
@@ -162,6 +164,52 @@ void IOTxtData::writeLogFile(string filename, vector<double> log)
     outputFile.close();
     return;
 }
+
+void IOTxtData::writeSegmentationLog(string filename, vector<double> time, vector<double> log_pulse_thres, vector<double> log_pulse_min, vector<double> log_pulse_max, vector<double> log_pulse_cur)
+{
+    // from string to qstring
+    QString fileqs = QString::fromStdString(filename);
+
+    QFile file(fileqs);
+    if(file.open(QFile::WriteOnly | QFile::Truncate))
+    {
+        QTextStream output(&file);
+
+        // header
+        output << "Time\tThreshold\tMin\tMax\tValue\n";
+
+        // write values
+        for(std::vector<int>::size_type i = 0; i != time.size(); i++) {
+            output << time[i] << "\t" << log_pulse_thres[i] << "\t" << log_pulse_min[i] << "\t" << log_pulse_max[i] << "\t" << log_pulse_cur[i] << "\n";
+        }
+    }
+
+    file.close();
+}
+
+void IOTxtData::writeStereoLog(string filename, vector<double> disparity_y, vector<int> is_sync)
+{
+    // from string to qstring
+    QString fileqs = QString::fromStdString(filename);
+
+    QFile file(fileqs);
+    if(file.open(QFile::WriteOnly | QFile::Truncate))
+    {
+        QTextStream output(&file);
+
+        // header
+        output << "Disparity_y\tSync\n";
+
+        // write values
+        for(std::vector<int>::size_type i = 0; i != disparity_y.size(); i++) {
+            output << disparity_y[i] << "\t" << is_sync[i]<< "\n";
+        }
+    }
+
+    file.close();
+}
+
+
 
 // Writes TXT file for stereo camera segmentation
 void IOTxtData::writeTxtFile(string filename, StereoSegmentation * seg)

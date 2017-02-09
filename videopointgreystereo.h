@@ -16,7 +16,7 @@ public:
     bool lastFrame();
     int getNumberOfFrames();
     void disconnect();
-    bool isConnected();
+    bool isConnected(int camID);
     bool isReady();
 private:
     CameraInfo camInfo;

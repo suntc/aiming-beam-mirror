@@ -166,8 +166,6 @@ void Segmentation::setColorScale(double mn, double mx)
 
 void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, double lt_ch1, double lt_ch2, double lt_ch3, double lt_ch4, int idx)
 {
-    //qDebug() << "channel";
-    //qDebug()  << current_channel;
     if (!firstFrameSet)
     {
         //save the first frame
@@ -202,6 +200,7 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
     log_lt_ch4.push_back(lt_ch4);
 
     log_frame_no.push_back(idx);
+    log_timer.push_back(timer);
 
     // cut current segmentation region from frame
     int x, y;
@@ -440,6 +439,11 @@ float Segmentation::pulsedSegmentation(cv::Mat frame_on, cv::Mat frame_off, Rect
 
     // Segmentation is valid
     return 1;
+}
+
+void Segmentation::setTimer(double timer)
+{
+    this->timer = timer;
 }
 
 Segmentation::~Segmentation()

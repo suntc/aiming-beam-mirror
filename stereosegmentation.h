@@ -40,7 +40,7 @@ public:
     vector<int> log_coords_x;
     vector<int> log_coords_y;
     vector<int> log_radius;
-    vector<double> log_synchronized;
+    vector<int> log_synchronized;
     vector<double> log_disparity_y;
 
     int x0;

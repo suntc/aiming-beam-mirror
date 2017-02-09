@@ -28,7 +28,7 @@ VideoPointGrey::VideoPointGrey()
     if ( numCameras < 1 )
     {
         //cout << "No camera detected." << endl;
-        std::cout << "No camera detected" << std::endl;
+        //std::cout << "No camera detected" << std::endl;
         return;
     }
 
@@ -39,7 +39,7 @@ VideoPointGrey::VideoPointGrey()
         return;
     }
 
-    qDebug() << "initialized";
+    //qDebug() << "initialized";
 
     error = cam1.Connect(&guid1);
     if (error != PGRERROR_OK)
@@ -77,9 +77,32 @@ VideoPointGrey::VideoPointGrey()
     }
 }
 
-bool VideoPointGrey::isConnected()
+/*
+bool VideoPointGrey::isConnected(int camID)
 {
     return connected;
+}
+*/
+
+bool VideoPointGrey::isConnected(int camID)
+{
+    bool isOpen = false;
+
+    switch (camID)
+    {
+    case 0: // top camera
+        if (numCameras > 1 && connected)
+            isOpen = true;
+        break;
+    case 1: // side camera
+        if (numCameras == 2 && connected)
+            isOpen = true;
+        break;
+    default:
+        isOpen = false;
+    }
+
+    return isOpen;
 }
 
 cv::Mat VideoPointGrey::getNextFrame( )

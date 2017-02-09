@@ -21,6 +21,8 @@ public:
     void setAnsi(int ansi);
     void setIdx(int idx);
     void setRadius(double radius);
+    void setTimer(double timer);
+
 
     int last_radius;
     vector<int> log_coords_x;
@@ -37,11 +39,13 @@ public:
     vector<double> log_lt_ch3;
     vector<double> log_lt_ch4;
     vector<double> log_frame_no;
+    vector<double> log_timer;
 
     int last_x;
     int last_y;
     int last_active;
     int idx = 0;
+    double timer = 0;
 
     float thres;
 
