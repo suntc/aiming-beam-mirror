@@ -89,6 +89,10 @@ Mat Overlay::getAccumulator()
 
 void Overlay::setNewInterval(double mn, double mx)
 {
+    // only redraw colorbar if the boundaries have changed
+    if (mn == getLowerBound() && mx == getUpperBound())
+        return;
+
     //qDebug() << "overlay 1";
     // set scale boundaries
     // validate colorbar boundaries
@@ -371,6 +375,9 @@ double Overlay::getValue(int x, int y)
 
 void Overlay::setAnsi(int ansi)
 {
+    if (ansi == this->ansi)
+        return;
+
     this->ansi = ansi;
     setNewInterval(scale_min,scale_max);
 }

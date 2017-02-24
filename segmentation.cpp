@@ -100,7 +100,7 @@ void Segmentation::init(Mat frame, cv::Point point1, cv::Point point2, bool inte
     size_struct_elem = 8;
 
     // adapt morphological filters to current resolution
-    int factor = round( res_y / 372 );
+    int factor = round( res_y / 372 ); //720
     struct_size1 = factor * 3; // 3 at standard resolution
     struct_size2 = factor * 2; // 1 at standard resolution
 
@@ -367,7 +367,7 @@ float Segmentation::pulsedSegmentation(cv::Mat frame_on, cv::Mat frame_off, Rect
     img_diff = abs(lab_on(corrArea) - lab_off(corrArea));
 
     // threshold for segmentation, experimentally determined
-    int thres = 25;
+    int thres = 25; //25;
     threshold(img_diff, img_diff, thres, 255, THRESH_BINARY);
 
     // Floodfill from point (0, 0)
@@ -423,7 +423,7 @@ float Segmentation::pulsedSegmentation(cv::Mat frame_on, cv::Mat frame_off, Rect
     im_out.release();
 
     // If segmentation is out of the frame area, it is not valid
-    if( x<0 | y<0 | x>corrArea.width | y>corrArea.height | radius>res_y/10)
+    if( x<0 | y<0 | x>corrArea.width | y>corrArea.height | radius>res_y/5 ) // /10
     {
         return 0;
     }

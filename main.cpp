@@ -312,7 +312,6 @@ void startup(GUIupdater *ui)
                 // send acknowledgment
                 //conn.write("test\r\n");
                 conn.write(set_ack(key, subject));
-
             }
 
             // aiming beam correction on/off?
@@ -708,10 +707,30 @@ void startup(GUIupdater *ui)
             //if(stereomode==true && acq->stereomode==false)
             //    acq->set_mode(true);
             // set acquisition loop condition
-            acq->inAcquisition = acquire;   // differentiate between focusing and acquisition
-            acq->inFocus = focus;
-            acq->ctrl = acquire;
+            /*
+            if (acquire)
+            {
+                acq->ctrl = acquire;
+                acq->inAcquisition = acquire;   // differentiate between focusing and acquisition
 
+            }
+            else
+            {
+                if (acq->cleanup)
+                {
+                    acq->inAcquisition = false;
+                    acq->ctrl = false;
+                }
+                else
+                {
+                    acq->ctrl = acquire;
+                    acq->inAcquisition = acquire;
+                }
+            }
+            */
+            acq->ctrl = acquire;
+            acq->inAcquisition = acquire;
+            acq->inFocus = focus;
 
             // check current working mode
             mode = (focus) ?

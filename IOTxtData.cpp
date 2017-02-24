@@ -141,7 +141,7 @@ void IOTxtData::writeTxtFile(string filename, Segmentation * seg)
     {
         outputFile <<std::to_string((int) *it_frame_noms) << "\t" << *it_ch1 << "\t" << *it_ch2 << "\t" << *it_ch3 << "\t" << *it_ch4 << "\t" << *it_pos_x << "\t" << *it_pos_y << "\t" << *it_rad << "\t" << *it_timer << "\n";
         it_frame_noms++; it_pos_x++; it_pos_y++; it_rad++;
-        it_ch1++; it_ch2++; it_ch3++; it_ch4++;
+        it_ch1++; it_ch2++; it_ch3++; it_ch4++; it_timer++;
     }
     outputFile.close();
 
@@ -223,6 +223,7 @@ void IOTxtData::writeTxtFile(string filename, StereoSegmentation * seg)
     vector<int>::iterator it_pos_x = seg->log_coords_x.begin();
     vector<int>::iterator it_pos_y = seg->log_coords_y.begin();
     vector<int>::iterator it_rad = seg->log_radius.begin();
+    vector<double>::iterator it_timer = seg->seg->log_timer.begin();
 
     vector<double>::iterator it_ch1 = seg->seg->log_lt_ch1.begin();
     vector<double>::iterator it_ch2 = seg->seg->log_lt_ch2.begin();
@@ -260,10 +261,10 @@ void IOTxtData::writeTxtFile(string filename, StereoSegmentation * seg)
             height = *it_height;
         }
 
-        outputFile << std::to_string((int) *it_frame_noms) << "\t" << ch1 << "\t" << ch2 << "\t" << ch3 << "\t" << ch4 << "\t" << x << "\t" << y << "\t" << *it_rad << "\t" << *it_real_x << "\t" << *it_real_y << "\t" << height << "\n";
+        outputFile << std::to_string((int) *it_frame_noms) << "\t" << ch1 << "\t" << ch2 << "\t" << ch3 << "\t" << ch4 << "\t" << x << "\t" << y << "\t" << *it_rad << "\t" << *it_timer << "\t" << *it_real_x << "\t" << *it_real_y << "\t" << height << "\n";
 
         it_frame_noms++; it_pos_x++; it_pos_y++; it_rad++; it_real_x++; it_real_y++; it_height++;
-        it_ch1++; it_ch2++; it_ch3++; it_ch4++;
+        it_ch1++; it_ch2++; it_ch3++; it_ch4++; it_timer++;
     }
     outputFile.close();
     return;

@@ -25,6 +25,7 @@ public:
     cv::Mat frame_on2;
     cv::Mat frame_off2;
 
+    bool cleanup = true;
     bool ctrl = false;
     bool thread = false;
     bool inAcquisition = false;

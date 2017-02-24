@@ -49,7 +49,7 @@ public:
     int y1;
 
 private:
-    int disparity_range = 200; // (def 700) to be adapted to configuration and resolution
+    int disparity_range = 400; //200 invivo (def 700) to be adapted to configuration and resolution
     StereoCalibration* calib;
     bool firstFrameSet;
     int current_channel=1;

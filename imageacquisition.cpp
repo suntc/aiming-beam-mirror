@@ -69,6 +69,9 @@ void imageAcquisition::startAcquisition()
             // initialization
             if (init_output==false)
             {
+
+                cleanup = false;
+
                 // mark start of acquisition
                 timer_acquisition_start = clock();
 
@@ -213,8 +216,11 @@ void imageAcquisition::startAcquisition()
             // fullscreen
             setWindowProperty("Acquisition", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
 
+        }
+        else
+        {
             // cleanup. This condition is only met when acquisition is stopped by the user
-            if (!ctrl)
+            if (!cleanup)
             {
                 destroyWindow("Acquisition");
                 init_output=false;
@@ -311,13 +317,9 @@ void imageAcquisition::startAcquisition()
                     seg_stereo = nullptr;
                 }
 
-            }
-            else
-            {
-                // do nothing. no acquisition
+                cleanup = true;
             }
         }
-
     }
 
     // clear camera and segmentation objects
@@ -553,6 +555,10 @@ void imageAcquisition::captureFrame()
                 log_pulse_max.push_back(blue_mx);
                 log_pulse_min.push_back(blue_mn);
                 log_pulse_cur.push_back(blueint);
+
+                clock_t now = clock();
+                double elapsed_time = double(now - timer_off);
+                timer_frames.push_back(elapsed_time);
 
                 counter++;
                 if (counter == nframes) counter = 0;
