@@ -11,16 +11,22 @@ using namespace cv;
 
 StereoSegmentation::StereoSegmentation(StereoCalibration * sc, cv::Mat frame, cv::Point ROI_point1, cv::Point ROI_point2, bool interp, int ch_number, bool interp_succ, bool autoscale, int ansi)
 {
-    seg = new Segmentation(frame, ROI_point1, ROI_point2, interp, ch_number, interp_succ, sc, autoscale); //TODO: pass autoscale here
-    this->calib = sc;
-    //current_channel = 0;
+    // StereoSegmentation acts as a wrapper
+    seg = new Segmentation(frame, ROI_point1, ROI_point2, interp, ch_number, interp_succ, sc, autoscale);
 
+    // save calibration pointer
+    this->calib = sc;
+
+    // set size
     Size s = frame.size();
     res_x = s.width;
     res_y = s.height;
+
     this->scale_auto=autoscale;
     double lower_bound_;
     double upper_bound_;
+
+    // if autoscale, start with a small bound
     if (autoscale==true)
     {
         lower_bound_ = 2;
@@ -31,8 +37,9 @@ StereoSegmentation::StereoSegmentation(StereoCalibration * sc, cv::Mat frame, cv
         lower_bound_ = 3;
         upper_bound_ = 6;
     }
+
     // Initialize Overlays
-    ch1_overlay = new Overlay(res_x,res_y,lower_bound_,upper_bound_, ansi); //TODO: Pass ansi limit here
+    ch1_overlay = new Overlay(res_x,res_y,lower_bound_,upper_bound_, ansi);
     ch2_overlay = new Overlay(res_x,res_y,lower_bound_,upper_bound_, ansi);
     ch3_overlay = new Overlay(res_x,res_y,lower_bound_,upper_bound_, ansi);
     ch4_overlay = new Overlay(res_x,res_y,lower_bound_,upper_bound_, ansi);
@@ -42,47 +49,29 @@ StereoSegmentation::StereoSegmentation(StereoCalibration * sc, cv::Mat frame, cv
     y0 = seg->ROI_left_upper.y;
     x1 = seg->ROI_right_lower.x-seg->ROI_left_upper.x;
     y1 = seg->ROI_right_lower.y-seg->ROI_left_upper.y;
-//qDebug() << "channel";
-//qDebug() << ch_number;
+
+    // set the overlay pointer to the current channel
     switchChannel(ch_number);
-    //switchChannel(0);
 }
 
 void StereoSegmentation::startSegmentation(Mat frame_vis, Mat frame_on, Mat frame_off, Mat frame_on2, Mat frame_off2, double lt_ch1, double lt_ch2, double lt_ch3, double lt_ch4, int idx)
 {
- //   qDebug() << "test";
-
-    //qDebug() << "stereosegm1";
-
- //  const char * filename1 = "im_on1.jpg";
- //  cvSaveImage(filename1, &(IplImage(frame_on)));
- //  const char * filename2 = "im_on2.jpg";
- //  cvSaveImage(filename2, &(IplImage(frame_on2)));
-
+    // make a copy of the first frame used for the image export
     if (!firstFrameSet)
     {
         firstFrame = frame_vis.clone();
         firstFrameSet = true;
     }
-    // do segmentation in the left videoframe
-    //qDebug() << "stereosegm before segm";
+
+    // start segmentation
     seg->startSegmentation(frame_vis, frame_on, frame_off, lt_ch1, lt_ch2, lt_ch3, lt_ch4, idx);
-    //imshow("frameon", frame_on);
-    //imshow("frameoff", frame_off);
-//qDebug() << "stereosegm after segm";
 
-
-    //const char * filename2 = "im_off.jpg";
-    //cvSaveImage(filename2, &(IplImage(frame_off)));
-
-    //seg left
-    //ellipse(frame_vis, Point(seg->last_x,seg->last_y), Size(5,5), 0, 0, 360, Scalar( 0, 255, 0 ), 3, 8, 0);
-
-
+    // show marker to be picked up
+    // getRectifiedPoint maps from the rectified left camera image (where segmentation is done) back to the original camera image
     ellipse(frame_vis, calib->getRectifiedPoint(Point(seg->last_x,seg->last_y),0), Size(5,5), 0, 0, 360, Scalar( 0, 0, 255 ), 3, 8, 0);
-//qDebug() << current_channel;
+
+    // get lifetime of current channel
     double lifetime = 0;
-    //current_channel = 0;
     if (current_channel!=0)
     {
         switch(current_channel) {
@@ -99,16 +88,15 @@ void StereoSegmentation::startSegmentation(Mat frame_vis, Mat frame_on, Mat fram
             lifetime=lt_ch4;
             break;
         }
+        // overlay lifetime
         overlay->drawCurrentVal(lifetime,current_channel);
     }
 
-    // if beam is found in the left frame, search for it in the right frame
-    // we assume that both frames are rectified (calibration required, see stereocalibration.cpp)
-    //qDebug() << "before last active";
-    //qDebug() << seg->last_active;
+    // Segment beam in rectified left camera image
     if (seg->last_active)
     {
-       // qDebug() << "stereosegm3";
+
+        // Adapt scale bar if necessary
         if (scale_auto)
         {
             if (lt_ch1>0)
@@ -144,41 +132,26 @@ void StereoSegmentation::startSegmentation(Mat frame_vis, Mat frame_on, Mat fram
                     ch4_overlay->setNewInterval(floor(lt_ch4),ch4_overlay->getUpperBound());
             }
         }
-//qDebug() << "lifetime limits adapted";
 
-
+        // if beam is found in the left frame, search for it in the right frame
+        // define a narrow ROI where we are looking for the beam in the rectified right camera image
         int height = seg->last_radius*2+20; //last_radius*2+20;
+
+        // beam position in the rectified left camera image
         Point2d beam_pos(seg->last_x, seg->last_y);
 
-
-
-        //Point2d beam_proj_l(beam_pos);
-        //Point2d beam_proj_r(beam_pos);
-        //beam_proj_l = calib->getRectifiedPoint(beam_proj_l,0);
-        //beam_proj_l = calib->getRectifiedPoint(beam_proj_r,1);
-
-       // ellipse(frame_vis, Point(beam_proj_l.x,beam_proj_l.y), Size(5,5), 0, 0, 360, Scalar( 0, 255, 0 ), 3, 8, 0);
-        //ellipse(frame_vis, Point(beam_proj_r.x,beam_proj_r.y), Size(5,5), 0, 0, 360, Scalar( 0, 0, 255 ), 3, 8, 0);
-
-        //beam_pos = calib->getRectifiedPoint(beam_pos,0);
-//+ disparity_range
-//
-//qDebug() << "stereosegm4";
-        // define ROI for finding the beam in the right videoframe
+        // narrow ROI
         int xfrom = (beam_pos.x - disparity_range < 0 ) ? 0  : beam_pos.x-disparity_range;
         int yfrom = (beam_pos.y - ceil(height/2)  < 0 ) ? 0  : beam_pos.y-ceil(height/2);
-        int xto   = (beam_pos.x +disparity_range > frame_vis.cols-1 ) ? frame_vis.cols-1 : beam_pos.x+disparity_range;
+        int xto   = (beam_pos.x + disparity_range > frame_vis.cols-1 ) ? frame_vis.cols-1 : beam_pos.x+disparity_range;
         int yto   = (beam_pos.y + ceil(height/2)  > frame_vis.rows-1 ) ? frame_vis.rows-1 : beam_pos.y+ceil(height/2);
 
         Rect corrArea(xfrom, yfrom, xto-xfrom, yto-yfrom);
 
         log_synchronized.push_back(is_synchronized ? 1 : 0);
+
+        // segment beam in rectified right camera image
         double correlation = seg->pulsedSegmentation(frame_on2, frame_off2, corrArea, x, y, radius);
-
-
-
-
-
 
         // define ROI for side camera
         x0 = ((int) x)+xfrom-seg->area_dim;
@@ -201,45 +174,31 @@ void StereoSegmentation::startSegmentation(Mat frame_vis, Mat frame_on, Mat fram
         y0 = (y0 < 1) ? seg->ROI_left_upper.y : y0;
         y1 = (y0 + y1 > seg->ROI_right_lower.y) ? seg->ROI_right_lower.y-y0 : y1;
 
-        Rect corrArea2(x0, y0, x1, y1);
-//qDebug() << "active1";
-
+        // get beam in unrectified camera image
         Point2d beam_pos_vis(calib->getRectifiedPoint(beam_pos,0));
 
+        // update overlays
         ch1_overlay->drawCircle(beam_pos_vis.x,beam_pos_vis.y,seg->last_radius*0.5,lt_ch1);
         ch2_overlay->drawCircle(beam_pos_vis.x,beam_pos_vis.y,seg->last_radius*0.5,lt_ch2);
         ch3_overlay->drawCircle(beam_pos_vis.x,beam_pos_vis.y,seg->last_radius*0.5,lt_ch3);
         ch4_overlay->drawCircle(beam_pos_vis.x,beam_pos_vis.y,seg->last_radius*0.5,lt_ch4);
 
+        // log coordinates (even if the right beam segmentation fails)
         log_coords_x.push_back(beam_pos_vis.x);
         log_coords_y.push_back(beam_pos_vis.y);
         log_radius.push_back(seg->last_radius);
 
         if (correlation>(seg->thres))
         {
-            //qDebug() << "active2";
-            //qDebug() << "activate";
-
-            // both beam positions are available
-
-            //Point2d beam_proj_l(beam_pos);
-            //beam_proj_l = calib->getRectifiedPoint(beam_proj_l,0);
-
-            //seg right
-            //ellipse(frame_vis, Point(x+xfrom,y+yfrom), Size(5,5), 0, 0, 360, Scalar( 255, 0, 0 ), 3, 8, 0);
-
+            // if beam found in right camera image do triangulation
             Mat cam0pnts(1,1,CV_64FC2, Scalar(beam_pos.x,beam_pos.y) );
             Mat cam1pnts(1,1,CV_64FC2, Scalar(x+xfrom,y+yfrom) );
-            Mat res = calib->reconstructPoint3D(cam0pnts,cam1pnts); // 1 0
+            Mat res = calib->reconstructPoint3D(cam0pnts,cam1pnts);
 
-            // do stereo triangulation!
             // convert from homogenous to Eucledian coordinats
             double height = res.at<Vec4d>(0,0)[2] / res.at<Vec4d>(0,0)[3];
 
-
-            //ellipse(frame_vis, beam_pos_vis, Size(5,5), 0, 0, 360, Scalar( 0, 255, 0 ), 3, 8, 0);
-
-            // visualize height
+            // update profile overlay (currently not used)
             if (height_profile==NULL)
             {
                 height_profile = new Overlay(seg->res_x,seg->res_y,height-0.1,height+0.1, 99999);
@@ -248,28 +207,20 @@ void StereoSegmentation::startSegmentation(Mat frame_vis, Mat frame_on, Mat fram
             }
             if (current_channel==0)
                 overlay->drawCurrentVal(height, current_channel);
-       //     if (height>height_profile->getUpperBound())
-       //         height_profile->setNewInterval(height_profile->getLowerBound(),height+0.05);
 
-       //     if (height<height_profile->getLowerBound())
-       //         height_profile->setNewInterval(height-0.05,height_profile->getUpperBound());
-
-            //qDebug() << "Profile Overlay";
-            //qDebug() << height;
-            //qDebug() << "stereosegm7";
             height_profile->drawCircle(beam_pos_vis.x,beam_pos_vis.y,seg->last_radius*0.5,height);
 
-
+            // x-, y-coordinates in 3D coordinate system (in inches)
             log_real_x.push_back(res.at<Vec4d>(0,0)[0] / res.at<Vec4d>(0,0)[3]);
             log_real_y.push_back(res.at<Vec4d>(0,0)[1] / res.at<Vec4d>(0,0)[3]);
 
+            // log height and vertical disparity (should be small, depends on calibration)
             log_height.push_back(height);
             log_disparity_y.push_back(beam_pos.y - y - yfrom);
         }
         else
         {
-
-            //qDebug() << "stereosegm8";
+            // if right beam was not found, log dummy variables
             log_height.push_back(0);
             log_real_x.push_back(0);
             log_real_y.push_back(0);
@@ -278,7 +229,7 @@ void StereoSegmentation::startSegmentation(Mat frame_vis, Mat frame_on, Mat fram
     }
     else
     {
-       // qDebug() << "stereosegm9";
+        // if left beam was not segmented, log dummy variables
         log_synchronized.push_back(0);
         log_height.push_back(0);
         log_real_x.push_back(0);
@@ -288,21 +239,13 @@ void StereoSegmentation::startSegmentation(Mat frame_vis, Mat frame_on, Mat fram
         log_radius.push_back(0);
     }
 
-    //Point2d beam_proj(seg->last_x,seg->last_y);
-    //beam_proj = calib->getRectifiedPoint(beam_proj,1);
-
-    //ellipse(frame_vis, beam_proj, Size(5,5), 0, 0, 360, Scalar( 0, 0, 255 ), 3, 8, 0);
-    //frame_vis = frame_r.clone();
-//qDebug() << "stereosegm10";
+    // update overlay
     if (height_profile!=NULL)
     {
         float alpha = 0.5;
         float beta = 0.5;
         addWeighted( frame_vis, alpha, overlay->mergeOverlay(frame_vis), beta, 0.0, frame_vis);
-        //addWeighted( frame_vis, alpha, ch1_overlay->mergeOverlay(frame_vis), beta, 0.0, frame_vis); //frame_vis
-//qDebug() << "stereosegm11";
     }
-    //qDebug() << "stereosegm12";
 }
 
 void StereoSegmentation::setThreshold(double thres)
@@ -312,7 +255,7 @@ void StereoSegmentation::setThreshold(double thres)
 
 void StereoSegmentation::switchChannel(int channel)
 {
-    //qDebug() << "in_set";
+    // update overlay pointer
     current_channel = channel;
     if(channel==1)
         overlay = ch1_overlay;
@@ -324,7 +267,6 @@ void StereoSegmentation::switchChannel(int channel)
         overlay = ch4_overlay;
     if(channel==0)
     {
-        //qDebug() << "set";
         overlay = height_profile;
     }
 
@@ -351,7 +293,6 @@ StereoSegmentation::~StereoSegmentation()
 
 void StereoSegmentation::setColorScale(double mn, double mx)
 {
-
     // set interval for all channels
     ch1_overlay->setNewInterval(mn, mx);
     ch2_overlay->setNewInterval(mn, mx);
@@ -366,5 +307,7 @@ void StereoSegmentation::setAutoScale(bool autoscale)
 
 void StereoSegmentation::set_synchronized( bool is_synchronized)
 {
+    // is_synchronized indicates if the last images (of left and right cam) were in the same state (on or off)
+    // for testing purposes only: being in a different state could lower the reconstruction precision
     this->is_synchronized = is_synchronized;
 }
