@@ -1,0 +1,8 @@
+# redirect segmentation on button click # to be tested in lab
+# look for instrument and avoid segmentation
+# identify frame grabbers by id # to be tested in simsuite. Need to make sure that we still run at full fps - modified class that deals with frame grabber connection. Still missing serial number from FGs
+# set USB camera resolution automatically # to be tested in lab
+# clear lifetime values after segmentation
+# USB cameras not working well without frame grabber
+# firefly setter # missing LabVIEW implementation
+# image white light overlay setter # missing LabVIEW implementation

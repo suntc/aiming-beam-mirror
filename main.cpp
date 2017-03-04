@@ -91,6 +91,8 @@ void startup(GUIupdater *ui)
     int irf_length = 0;     // length of the IRF in each channel
     int run = 0;    // run number
     bool stereomode = false;    // stereomode on or off
+    bool firefly = false;   // flag for firefly or standard camera, in vivo mode only for daVinci camera
+    bool wl_overlay = true; // flag to use fluorescence data overlay on white light images
 
     // lifetime boundaries & other display parameters
     bool lt_auto = true; // automatic scale
@@ -113,11 +115,6 @@ void startup(GUIupdater *ui)
     int mode = OFFLINE;
     int previous_mode = -2;
     ui->setMode(mode);
-
-    bool usb_1_ready = false;
-    bool usb_2_ready = false;
-    bool fg_1_ready = false;
-    bool fg_2_ready = false;
 
     // initialize image acquisition object (this is for the exvivo camera only. may need to be changed in the future)
     imageAcquisition *acq = new imageAcquisition(stereomode);
@@ -562,12 +559,20 @@ void startup(GUIupdater *ui)
                     if (mode == 1)
                         filename.append("Calibration\\Calibration_exvivo");
                     else if (mode == 2)
-                        filename.append("Calibration\\Calibration_invivo");
-
-                    string counter = IOPath::getandincreaseCurrentCounter();
+                    {
+                        if (firefly)
+                        {
+                            filename.append("Calibration\\Calibration_invivo_firefly");
+                        }
+                        else
+                        {
+                            filename.append("Calibration\\Calibration_invivo_standard");
+                        }
+                    }
+                    //string counter = IOPath::getandincreaseCurrentCounter();
                     //filename.append(counter);
                     filename.append(".yml");
-                    qDebug() << filename.c_str();
+                    //qDebug() << filename.c_str();
 
                     //calib->saveCalibration(filename);
                 }
@@ -671,8 +676,30 @@ void startup(GUIupdater *ui)
                 idx = stoi(value);
                 acq->setIdx(idx);
                 conn.write(set_ack(key, value));
+            }
 
+            // calibration file for invivo, firefly or standard camera?
+            else if (key.compare("!firefly") == 0)
+            {
+                firefly = (value.compare("1") == 0) ? true : false;
 
+                // point to different calibration file
+                acq->setFirefly(firefly);
+
+                //acknowledge
+                conn.write(set_ack(key, value));
+
+            }
+
+            else if (key.compare("!overlay") == 0)
+            {
+                wl_overlay = (value.compare("1") == 0) ? true : false;
+
+                // use white light overlay
+                acq->setWLOverlay(wl_overlay);
+
+                // acknowledge
+                conn.write(set_ack(key, value));
             }
 
             else

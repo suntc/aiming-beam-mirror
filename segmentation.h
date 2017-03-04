@@ -53,6 +53,9 @@ public:
     float simpleThreshold(cv::Mat frame, int &x, int &y, int &radius);
     float doubleRingSegmentation(cv::Mat frame, int &x, int &y, int &radius);
     float pulsedSegmentation(cv::Mat frame_on, cv::Mat frame_off, cv::Rect corrArea,float &x, float &y, int &radius);
+    void adjustArea(int x, int y);
+
+    bool new_pos = false;
     int res_x;
     int res_y;
     cv::Mat firstFrame;

@@ -36,5 +36,6 @@ private:
     bool ready;
     uint serial_top_cam = 16061459;
     uint serial_side_cam = 16061491;
+    bool stereoAvailable = false;
 };
 #endif // VIDEOPOINTGREYSTEREO_H

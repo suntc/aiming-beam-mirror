@@ -293,10 +293,19 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
         // update log files
         log_coords_x.push_back(x);
         log_coords_y.push_back(y);
-
         log_radius.push_back(radius);
-        last_x = x;
-        last_y = y;
+
+        // update position based on button click
+        if (new_pos)
+        {
+            new_pos = false;
+        }
+        else
+        {
+            last_x = x;
+            last_y = y;
+        }
+
         last_radius=radius;
         last_lt_ch1=lt_ch1;
         last_lt_ch2=lt_ch2;
@@ -439,6 +448,13 @@ float Segmentation::pulsedSegmentation(cv::Mat frame_on, cv::Mat frame_off, Rect
 
     // Segmentation is valid
     return 1;
+}
+
+void Segmentation::adjustArea(int x, int y)
+{
+    new_pos = true;
+    last_x = x;
+    last_y = y;
 }
 
 void Segmentation::setTimer(double timer)

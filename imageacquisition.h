@@ -70,6 +70,11 @@ public:
     void setAutoScale(bool autoscale);
     void setScale(double mn, double mx);
     void setAnsi(int ansi);
+    void setFirefly(bool firefly);
+    void setWLOverlay(bool overlay);
+
+    void adjustArea(int event, int x, int y);
+    static void adjustArea(int event, int x, int y, int flags, void* userdata);
 
     std::vector<double> log_pulse_max;
     std::vector<double> log_pulse_min;
@@ -88,11 +93,16 @@ private:
     int height = 459;
     std::string infix;
     bool writing = false;
+    bool firefly = false;
+    bool wl_overlay = true;
     double scale_max = 2;
     double scale_min = 3;
     double radius = 1.0;
     bool scale_auto;
     int ansi = 999999;
+    bool new_pos = true;
+    int new_xpos = 1;
+    int new_ypos = 1;
 
 };
 

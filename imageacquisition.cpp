@@ -12,7 +12,6 @@
 #include "videoepiphan.h"
 #include <ctime>
 
-
 #define NO_LIFETIME -1
 
 using namespace cv;
@@ -27,7 +26,7 @@ imageAcquisition::imageAcquisition(bool stereomode)
 void imageAcquisition::startupCamera(int ch, float thres)
 {
     // startup one or two cameras
-    // and check if at least one camera is connected
+    // check if leading camera is connected. Monomode can only be realized if leading camera is plugged in
 
     // check frame grabber
     cam = new VideoEpiphan();
@@ -213,6 +212,9 @@ void imageAcquisition::startAcquisition()
             // show frame
             imshow("Acquisition", frame);
 
+            // callback function for mouse event - looking for button click
+            setMouseCallback("Acquisition", adjustArea, NULL);
+
             // fullscreen
             setWindowProperty("Acquisition", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
 
@@ -353,7 +355,12 @@ void imageAcquisition::load_calib()
             // initialize calibration
             string filename = IOPath::getAppDir();
             if (invivo) // call frame grabber segmentation
-                filename.append("Calibration\\Calibration_invivo");
+            {
+                if (firefly)
+                    filename.append("Calibration\\Calibration_invivo_firefly");
+                else
+                    filename.append("Calibration\\Calibration_invivo_standard");
+            }
             else    // call usb camera segmentation
                 filename.append("Calibration\\Calibration_exvivo");
 
@@ -438,10 +445,12 @@ void imageAcquisition::captureFrame()
                 // for both frames
                 if (!stereomode)
                 {
+
                     // x
                     area.x = seg->x0;   area.width = seg->x1;
                     // y
                     area.y = seg->y0;   area.height = seg->y1;
+
                 }
                 else    // stereomode
                 {
@@ -620,10 +629,25 @@ void imageAcquisition::captureFrame()
     }
 }
 
+void imageAcquisition::adjustArea(int event, int x, int y, int flags, void* userdata)
+{
+    if  ( event == EVENT_LBUTTONDOWN )  // left button is click
+    {
+        // following explanation of http://stackoverflow.com/questions/25748404/how-to-use-cvsetmousecallback-in-class
+        imageAcquisition* acq = reinterpret_cast<imageAcquisition*>(userdata);
+        acq->seg->adjustArea(x, y);
+
+        //cout << "Left button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+    }
+}
+
+
 // setters
 void imageAcquisition::setInVivo(bool invivo)
 {
     this->invivo = invivo;
+
+    // load calibration files
     load_calib();
 }
 
@@ -713,4 +737,14 @@ bool imageAcquisition::getUSBOpen(int camID)
 bool imageAcquisition::getFGOpen(int camID)
 {
     return cam->isConnected(camID);
+}
+
+void imageAcquisition::setFirefly(bool firefly)
+{
+    this->firefly = firefly;
+}
+
+void imageAcquisition::setWLOverlay(bool overlay)
+{
+    wl_overlay = overlay;
 }

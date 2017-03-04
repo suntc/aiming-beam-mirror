@@ -28,9 +28,9 @@ SOURCES += main.cpp\
     iopath.cpp \
     stereosegmentation.cpp \
     stereocalibration.cpp \
-    videopointgreystereo.cpp \
     IOTxtData.cpp \
-    videoepiphan.cpp
+    videoepiphan.cpp \
+    camera_test.cpp
 
 
 INCLUDEPATH += "C:\Opt\Boost\include\boost-1_55"
@@ -38,6 +38,7 @@ INCLUDEPATH += "C:\Opt\OpenCV\include"
 #INCLUDEPATH += "C:\Program Files\IDS\uEye\Develop\include"
 INCLUDEPATH += "C:\Opt\Boost\include\boost-1_55"
 INCLUDEPATH += "C:\Opt\FlyCapture2\include"
+INCLUDEPATH += "C:\Opt\Epiphan\include"
 
 # openCV
 LIBS += -LC:\Opt\OpenCV\x64\vc12\lib -lopencv_highgui300
@@ -64,7 +65,8 @@ LIBS += -LC:\Opt\Boost\lib -llibboost_filesystem-vc120-mt-1_55
 LIBS += -LC:\Opt\Boost\lib -llibboost_thread-vc120-mt-1_55
 
 # Epiphan
-LIBS += -LC:\Opt\Epiphan\epiphan\bin -frmgrab
+LIBS += -LC:\Opt\Epiphan\frmgrab\lib\win\x64 -lfrmgrab
+
 
 LIBS += -lWs2_32
 LIBS += -lMswsock
@@ -88,8 +90,12 @@ HEADERS  += mainwindow.h \
     stereosegmentation.h \
     stereocalibration.h \
     videoinputstereo.h \
-    videopointgreystereo.h \
     IOTxtData.h \
-    videoepiphan.h
+    videoepiphan.h \
+    frmgrab.h
 
 FORMS    += mainwindow.ui
+
+DISTFILES += \
+    todo.txt
+

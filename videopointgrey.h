@@ -28,7 +28,7 @@ private:
     PGRGuid guid2;
     BusManager busMgr;
     unsigned int numCameras;
-    FlyCapture2::Error error;
+    FlyCapture2::Error status;
     Image rawImage1;
     Image rawImage2;
     Image rgbImage1;
@@ -38,6 +38,8 @@ private:
     int height;
     cv::Mat image;
     bool stereoAvailable = false;
+    bool cam1_available = false;
+    bool cam2_available = false;
 
     // Serial numbers to identify the cameras
     uint serial_top_cam = 16061459;

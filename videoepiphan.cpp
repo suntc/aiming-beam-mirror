@@ -1,78 +1,122 @@
 #include "videoepiphan.h"
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <QMessageBox>
+
 #include <QDebug>
 
 using namespace cv;
 
+
 VideoEpiphan::VideoEpiphan()
 {
+    // initialization
+    fg1 = NULL;
+    fg2 = NULL;
+
     // assume there is no stereo
     stereoAvailable = false;
 
-    try
+    // define resolution. Not really sure if necessary
+    options.captureFlags = V2U_GRABFRAME_FORMAT_RGB24;
+    options.cropRect.x = 0;
+    options.cropRect.y = 0;
+    options.cropRect.width = frameWidth;
+    options.cropRect.height = frameHeight;
+
+    // initialization
+    FrmGrab_Init();
+
+}
+
+void VideoEpiphan::setup()
+{
+    // open leading frame grabber - left camera stereo
+    fg1 = FrmGrabLocal_OpenSN(sn1);
+
+    // leave the following code as is, open to implement new features as setting resolution and fps
+
+    if (fg1 != NULL)    // fg1 is available
     {
-        // try to open first frame grabber
-        cap1.open(0);
-
-        if (cap1.isOpened())
-        {
-            // set resolution first frame grabber
-            cap1.set(CV_CAP_PROP_FRAME_WIDTH,1280);
-            cap1.set(CV_CAP_PROP_FRAME_HEIGHT,720);
-
-            // get resolution
-            frameHeight = cap1.get(CV_CAP_PROP_FRAME_HEIGHT); // Height in pixels of the frame
-            frameWidth = cap1.get(CV_CAP_PROP_FRAME_WIDTH); // Width in pixels of the frame
-
-            RGBimage.create(frameWidth, frameHeight, CV_8UC3);
-        }
+        fg1_available = true;
     }
-    catch(...)
+    else
     {
-        return;
+        fg1_available = false;
     }
 
-    // check second frame grabber
-    try
+    // connect to second frame grabber - right camera stereo
+    fg2 = FrmGrabLocal_OpenSN(sn2);
+
+    if (fg2 != NULL)
     {
-        // open second frame grabber
-        cap2.open(1);
-
-        if (cap2.isOpened())
-        {
-            stereoAvailable = true;
-
-            // set resolution
-            cap2.set(CV_CAP_PROP_FRAME_WIDTH,1280);
-            cap2.set(CV_CAP_PROP_FRAME_HEIGHT,720);
-        }
+        fg2_available = true;
     }
-    catch(...)
+    else
     {
-        return;
-
+        fg2_available = false;
     }
+
+    // check stereo availability
+    stereoAvailable = (fg1_available && fg2_available) ? true : false;
+
 
 }
 
 Mat VideoEpiphan::getNextFrame()
 {
-    // Acquire image
-    cap1 >> RGBimage;
-    //qDebug() << RGBimage.cols;
-    //qDebug() << RGBimage.rows;
-    //imshow("image", RGBimage);
-    //resize(RGBimage, RGBimage, Size (1280,720)); //frame_cols, frame_rows));
+    // capture 1 frame. Set last option to NULL to capture entire frame i.e. no cropping
+    frame1 = FrmGrab_Frame(fg1, options.captureFlags, NULL);
+
+    // convert to opencv format
+    convertFrame(frame1, RGBimage);
+
+    // release frame
+    FrmGrab_Release(fg1, frame1);
+
     return RGBimage;
 }
 
+
 void VideoEpiphan::getNextStereoFrame(Mat &f1, Mat &f2)
 {
-    cap1 >> f1;
-    cap2 >> f2;
-    return;
+    // capture from both frame grabbers
+    frame1 = FrmGrab_Frame(fg1, options.captureFlags, NULL);
+    frame2 = FrmGrab_Frame(fg2, options.captureFlags, NULL);
+
+    // convert top open cv format
+    convertFrame(frame1, f1);
+    convertFrame(frame2, f2);
+
+    // release frame
+    FrmGrab_Release(fg1, frame1);
+    FrmGrab_Release(fg2, frame2);
+
+}
+
+void VideoEpiphan::convertFrame(V2U_GrabFrame2* fin, Mat &fout)
+{
+    if (fin)
+    {
+        int h = fin->mode.height;
+        int w = fin->mode.width;
+
+        fout = Mat(h, w, CV_8UC3,(uchar*)fin->pixbuf, 3*w);
+    }
+}
+
+void VideoEpiphan::start()
+{
+    // signal the frame grabber to prepare for capturing frames. helps to get max fps
+    FrmGrab_Start(fg1);
+    if (stereoAvailable)
+        FrmGrab_Start(fg2);
+
+}
+
+void VideoEpiphan::stop()
+{
+    // signals the frame grabber to stop capturing
+    FrmGrab_Stop(fg1);
+    if (stereoAvailable)
+        FrmGrab_Stop(fg2);
 }
 
 bool VideoEpiphan::lastFrame()
@@ -87,9 +131,15 @@ int VideoEpiphan::getNumberOfFrames()
 
 void VideoEpiphan::disconnect()
 {
-    cap1.release();
+    // disconnect frame grabbers & release memory
+    FrmGrab_Close(fg1);
     if (stereoAvailable)
-        cap2.release();
+        FrmGrab_Close(fg2);
+
+    delete(frame1);
+    delete(frame2);
+
+    FrmGrab_Deinit();
 }
 
 void VideoEpiphan::set_resolution(int w, int h)
@@ -103,10 +153,10 @@ bool VideoEpiphan::isConnected(int camID)
     switch (camID)
     {
     case 0: // first camera
-        isOpen = cap1.isOpened();
+        isOpen = fg1_available;
         break;
     case 1: // second camera
-        isOpen = cap2.isOpened();
+        isOpen = fg2_available;
     }
 
     return isOpen;
