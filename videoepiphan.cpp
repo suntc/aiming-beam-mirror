@@ -15,7 +15,7 @@ VideoEpiphan::VideoEpiphan()
     stereoAvailable = false;
 
     // define resolution. Not really sure if necessary
-    options.captureFlags = V2U_GRABFRAME_FORMAT_RGB24;
+    options.captureFlags = V2U_GRABFRAME_FORMAT_BGR24;
     options.cropRect.x = 0;
     options.cropRect.y = 0;
     options.cropRect.width = frameWidth;
@@ -23,6 +23,8 @@ VideoEpiphan::VideoEpiphan()
 
     // initialization
     FrmGrab_Init();
+
+    setup();
 
 }
 
@@ -133,11 +135,11 @@ void VideoEpiphan::disconnect()
 {
     // disconnect frame grabbers & release memory
     FrmGrab_Close(fg1);
-    if (stereoAvailable)
-        FrmGrab_Close(fg2);
 
-    delete(frame1);
-    delete(frame2);
+    if (stereoAvailable)
+    {
+        FrmGrab_Close(fg2);
+    }
 
     FrmGrab_Deinit();
 }

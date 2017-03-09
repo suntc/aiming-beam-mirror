@@ -66,8 +66,6 @@ LIBS += -LC:\Opt\Boost\lib -llibboost_thread-vc120-mt-1_55
 
 # Epiphan
 LIBS += -LC:\Opt\Epiphan\frmgrab\lib\win\x64 -lfrmgrab
-
-
 LIBS += -lWs2_32
 LIBS += -lMswsock
 

@@ -213,7 +213,7 @@ void imageAcquisition::startAcquisition()
             imshow("Acquisition", frame);
 
             // callback function for mouse event - looking for button click
-            setMouseCallback("Acquisition", adjustArea, NULL);
+            setMouseCallback("Acquisition", adjustArea, this);
 
             // fullscreen
             setWindowProperty("Acquisition", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
@@ -366,8 +366,10 @@ void imageAcquisition::load_calib()
 
             filename.append(".yml");
             calib = new StereoCalibration(filename);
+
         }
     }
+
 }
 
 void imageAcquisition::captureFrame()
@@ -635,7 +637,11 @@ void imageAcquisition::adjustArea(int event, int x, int y, int flags, void* user
     {
         // following explanation of http://stackoverflow.com/questions/25748404/how-to-use-cvsetmousecallback-in-class
         imageAcquisition* acq = reinterpret_cast<imageAcquisition*>(userdata);
-        acq->seg->adjustArea(x, y);
+
+        if (!acq->stereomode)
+            acq->seg->adjustArea(x, y);
+        else
+            acq->seg_stereo->seg->adjustArea(x, y);
 
         //cout << "Left button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
     }
