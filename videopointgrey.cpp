@@ -33,10 +33,10 @@ VideoPointGrey::VideoPointGrey()
         Format7ImageSettings fmt7ImageSettings;
         fmt7ImageSettings.mode = MODE_0;
         fmt7ImageSettings.offsetX = 0;
-        fmt7ImageSettings.offsetY = 0;
+        fmt7ImageSettings.offsetY = 152;
         fmt7ImageSettings.width = 1280;
         fmt7ImageSettings.height = 720;
-        fmt7ImageSettings.pixelFormat = PIXEL_FORMAT_MONO8; //PIXEL_FORMAT_RGB
+        fmt7ImageSettings.pixelFormat = PIXEL_FORMAT_RGB8; //PIXEL_FORMAT_RGB
 
         bool valid;
         Format7PacketInfo fmt7PacketInfo;
@@ -87,6 +87,7 @@ VideoPointGrey::VideoPointGrey()
             cam2.StartCapture();
         }
     }
+
 }
 
 /*
@@ -181,20 +182,17 @@ cv::Mat VideoPointGrey::getNextFrame( )
 {
     // Get the image
     status = cam1.RetrieveBuffer( &rawImage1 );
-
     if ( status != PGRERROR_OK )
     {
         cv::Mat m;
         return m.clone();
     }
-
     // convert to rgb
     rawImage1.Convert( FlyCapture2::PIXEL_FORMAT_BGR, &rgbImage1 );
 
     // convert to OpenCV Mat
     unsigned int rowBytes = (double)rgbImage1.GetReceivedDataSize()/(double)rgbImage1.GetRows();
     image = cv::Mat(rgbImage1.GetRows(), rgbImage1.GetCols(), CV_8UC3, rgbImage1.GetData(),rowBytes);
-
     return image.clone();
 }
 

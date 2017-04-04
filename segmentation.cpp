@@ -246,7 +246,6 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
         // update scale bar limits
         if(!stereo_setup && scale_auto)
         {
-            //qDebug() << "startset";
             if (lt_ch1>0)
             {
                 if (lt_ch1>ch1_overlay->getUpperBound())
@@ -366,17 +365,17 @@ float Segmentation::pulsedSegmentation(cv::Mat frame_on, cv::Mat frame_off, Rect
 
     // convert to lab space
     cvtColor(frame_on, lab_on, CV_BGR2Lab);
-    extractChannel (lab_on, lab_on, 2 );
+    extractChannel (lab_on, lab_on, 2 );//2
 
     cvtColor(frame_off, lab_off, CV_BGR2Lab);
-    extractChannel (lab_off, lab_off, 2 );
+    extractChannel (lab_off, lab_off, 2 );//2
 
     // compute difference between frames
     Mat img_diff;
     img_diff = abs(lab_on(corrArea) - lab_off(corrArea));
 
     // threshold for segmentation, experimentally determined
-    int thres = 25; //25;
+    int thres = 25;
     threshold(img_diff, img_diff, thres, 255, THRESH_BINARY);
 
     // Floodfill from point (0, 0)

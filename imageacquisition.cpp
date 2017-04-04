@@ -613,13 +613,11 @@ void imageAcquisition::captureFrame()
                     focus_frame = cam->getNextFrame();
                 else
                     focus_frame = cam_usb->getNextFrame();
-
                 imshow("Focus", focus_frame);
-
                 // fullscreen
                 setWindowProperty("Focus", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
-
                 if (!inFocus)   destroyWindow("Focus");
+
 
                 focus_frame.release();
 
