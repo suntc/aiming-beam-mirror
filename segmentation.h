@@ -71,6 +71,7 @@ private:
     void init(cv::Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ);
 
     bool firstFrameSet = false;
+    bool pentero_mode = false;
 
     bool scale_auto;
     double scale_min;

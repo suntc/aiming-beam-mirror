@@ -308,7 +308,7 @@ void imageAcquisition::startAcquisition()
                 bg_frame2 = Mat();
 
                 // restart segmentation objects
-                if (!stereomode)
+                if (!stereomode & !pentero_mode)
                 {
                     delete seg;
                     seg = nullptr;

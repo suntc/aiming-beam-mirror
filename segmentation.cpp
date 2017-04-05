@@ -328,7 +328,7 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
     float alpha = 0.5;
     float beta = 0.5;
 
-    if (!stereo_setup)
+    if (!stereo_setup & !pentero_mode)
     {
         addWeighted( frame, alpha, overlay->mergeOverlay(frame), beta, 0.0, frame);
 

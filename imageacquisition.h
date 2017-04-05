@@ -94,6 +94,7 @@ private:
     std::string infix;
     bool writing = false;
     bool firefly = false;
+    bool pentero_mode = false;
     bool wl_overlay = true;
     double scale_max = 2;
     double scale_min = 3;
