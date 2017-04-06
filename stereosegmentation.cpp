@@ -154,25 +154,26 @@ void StereoSegmentation::startSegmentation(Mat frame_vis, Mat frame_on, Mat fram
         double correlation = seg->pulsedSegmentation(frame_on2, frame_off2, corrArea, x, y, radius);
 
         // define ROI for side camera
-        x0 = ((int) x)+xfrom-seg->area_dim;
-        y0 = ((int) y)+yfrom-seg->area_dim;
-        if (x0<0)
-            x0=0;
-        if (y0<0)
-            y0=0;
-        x1 = ((int) x) +xfrom+seg->area_dim;
-        y1 = ((int) y) +yfrom+seg->area_dim;
-        if (x1> frame_vis.cols-1)
-            x1= frame_vis.cols-1;
-        if (y0> frame_vis.rows-1)
-            y0= frame_vis.rows-1;
-        x1 = x1-x0;
-        y1 = y1-y0;
+        int x_0, x_1, y_0, y_1;
+        x_0 = ((int) x)+xfrom-seg->area_dim;
+        y_0 = ((int) y)+yfrom-seg->area_dim;
+        if (x_0<0)
+            x_0=0;
+        if (y_0<0)
+            y_0=0;
+        x_1 = ((int) x) +xfrom+seg->area_dim;
+        y_1 = ((int) y) +yfrom+seg->area_dim;
+        if (x_1> frame_vis.cols-1)
+            x_1= frame_vis.cols-1;
+        if (y_0> frame_vis.rows-1)
+            y_0= frame_vis.rows-1;
+        x_1 = x_1-x_0;
+        y_1 = y_1-y_0;
 
-        x0 = (x0 < 1) ? seg->ROI_left_upper.x : x0;
-        x1 = (x0 + x1 > seg->ROI_right_lower.x ) ? seg->ROI_right_lower.x-x0 : x1;
-        y0 = (y0 < 1) ? seg->ROI_left_upper.y : y0;
-        y1 = (y0 + y1 > seg->ROI_right_lower.y) ? seg->ROI_right_lower.y-y0 : y1;
+        x0 = (x_0 < 1) ? seg->ROI_left_upper.x : x_0;
+        x1 = (x_0 + x_1 > seg->ROI_right_lower.x ) ? seg->ROI_right_lower.x-x_0 : x_1;
+        y0 = (y_0 < 1) ? seg->ROI_left_upper.y : y_0;
+        y1 = (y_0 + y_1 > seg->ROI_right_lower.y) ? seg->ROI_right_lower.y-y_0 : y_1;
 
         // get beam in unrectified camera image
         Point2d beam_pos_vis(calib->getRectifiedPoint(beam_pos,0));

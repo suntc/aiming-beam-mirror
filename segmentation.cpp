@@ -221,10 +221,10 @@ void Segmentation::startSegmentation(Mat frame, Mat frame_on, Mat frame_off, dou
 
     //Mat frame_cut = frame(corrArea);
 
-    float x1,y1;
+    float xalt, yalt;
     // invoke segmentation
-    correlation = pulsedSegmentation(frame_on, frame_off, corrArea, x1, y1, radius);
-    x = (int) x1; y = (int) y1;
+    correlation = pulsedSegmentation(frame_on, frame_off, corrArea, xalt, yalt, radius);
+    x = (int) xalt; y = (int) yalt;
 
     // update beam position
     if (correlation > thres)

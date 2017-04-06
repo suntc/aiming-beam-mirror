@@ -557,12 +557,18 @@ Mat StereoCalibration::reconstructPoint3D(Mat p_l, Mat p_r)
 Mat StereoCalibration::getRectifiedIm(Mat img, int camID)
 {
     Mat rimg;
+
     if (camID==0)
+    {
         remap(img, rimg, rmap00, rmap01, INTER_LINEAR);
         //remap(img, rimg, map_x0, map_y0, INTER_LINEAR);
+
+    }
     if (camID==1)
+    {
         remap(img, rimg, rmap10, rmap11, INTER_LINEAR);
         //remap(img, rimg, map_x1, map_y1, INTER_LINEAR);
+    }
 
     return rimg;
 }
@@ -598,7 +604,6 @@ Point2d StereoCalibration::getRectifiedPoint(Point2d p, int camID)
             std::cout << endl << "out of range" << endl;
         }
     }
-
 
     return res;
 }

@@ -33,7 +33,7 @@ VideoPointGrey::VideoPointGrey()
         Format7ImageSettings fmt7ImageSettings;
         fmt7ImageSettings.mode = MODE_0;
         fmt7ImageSettings.offsetX = 0;
-        fmt7ImageSettings.offsetY = 152;
+        fmt7ImageSettings.offsetY = 0;
         fmt7ImageSettings.width = 1280;
         fmt7ImageSettings.height = 720;
         fmt7ImageSettings.pixelFormat = PIXEL_FORMAT_RGB8; //PIXEL_FORMAT_RGB

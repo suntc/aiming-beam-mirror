@@ -53,6 +53,7 @@ void imageAcquisition::startAcquisition()
 
     while (thread)
     {
+
         if (ctrl)
         {
             if (!seg && !stereomode)
@@ -106,8 +107,18 @@ void imageAcquisition::startAcquisition()
 
                         if (stereomode)
                         {
+
+                            if (ab_frame2.empty() || bg_frame2.empty())
+                                continue;
+
                             frame_on2 = ab_frame2;
                             frame_off2 = bg_frame2;
+
+                            // rectify images
+                            frame_on = calib->getRectifiedIm(frame_on,0);
+                            frame_off = calib->getRectifiedIm(frame_off,0);
+                            frame_on2 = calib->getRectifiedIm(frame_on2,1);
+                            frame_off2 = calib->getRectifiedIm(frame_off2,1);
                         }
                     }
                     else
@@ -117,6 +128,7 @@ void imageAcquisition::startAcquisition()
                 {
                     continue;
                 }
+
 
                 // prevent repeated segmentations
                 if (idx == idx_prev && ctrl)    continue;
@@ -187,7 +199,8 @@ void imageAcquisition::startAcquisition()
                     lt12 = std::make_pair(ch1_tau,ch2_tau);
                     std::pair <double,double> lt34;
                     lt34 = std::make_pair(ch3_tau,ch4_tau);
-                    segmentationThread = new boost::thread(boost::bind(ThreadWrapper::startStereoSegmentationThread, seg_stereo, frame, calib->getRectifiedIm(frame_on,0), calib->getRectifiedIm(frame_off,0), calib->getRectifiedIm(frame_on2,1), calib->getRectifiedIm(frame_off2,1), lt12, lt34, idx));
+
+                    segmentationThread = new boost::thread(boost::bind(ThreadWrapper::startStereoSegmentationThread, seg_stereo, frame, frame_on, frame_off, frame_on2, frame_off2, lt12, lt34, idx));
                 }
 
                 // TODO: need to fix this
@@ -200,7 +213,7 @@ void imageAcquisition::startAcquisition()
                 // thread
                 segmentationThread->join();
                 segmentationThread->detach();
-                segmentationThread->~thread();
+                //segmentationThread->interrupt();
 
                 // update id, to prevent repeated segmentations
                 idx_prev = idx;
@@ -308,7 +321,7 @@ void imageAcquisition::startAcquisition()
                 bg_frame2 = Mat();
 
                 // restart segmentation objects
-                if (!stereomode & !pentero_mode)
+                if (!stereomode)// & !pentero_mode)
                 {
                     delete seg;
                     seg = nullptr;
@@ -469,6 +482,7 @@ void imageAcquisition::captureFrame()
                     frame_lab = calib->getRectifiedIm(frame_lab,0);
                     // rectify image of side cam
                     frame_lab2 = calib->getRectifiedIm(frame_lab2,1);
+
                 }
 
 
@@ -594,7 +608,7 @@ void imageAcquisition::captureFrame()
             frame_lab.release();
             frame_lab2.release();
 
-            Sleep(1); // let it rest for ~10 ms. otherwise it is likely to crash
+            //Sleep(1); // let it rest for ~10 ms. otherwise it is likely to crash
         } else {
 
             // clear timer
@@ -625,6 +639,7 @@ void imageAcquisition::captureFrame()
 
         }
 
+        Sleep(5);
 
     }
 }
@@ -640,6 +655,8 @@ void imageAcquisition::adjustArea(int event, int x, int y, int flags, void* user
             acq->seg->adjustArea(x, y);
         else
             acq->seg_stereo->seg->adjustArea(x, y);
+
+        delete(acq);
 
         //cout << "Left button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
     }

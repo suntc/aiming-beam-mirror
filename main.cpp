@@ -211,8 +211,6 @@ void startup(GUIupdater *ui)
 
         while (true){
 
-
-
             // initialize deconvolution only once
             if (iIRFs_initialized==false && iIRF_CH1.size()>0 && iIRF_CH2.size()>0 && iIRF_CH3.size()>0 && iIRF_CH4.size()>0)
             {
@@ -789,7 +787,6 @@ void startup(GUIupdater *ui)
             //clear up thread
             readingThread.join();
             readingThread.detach();
-            readingThread.~thread();
 
         }
 
