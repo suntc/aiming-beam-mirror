@@ -92,7 +92,7 @@ void startup(GUIupdater *ui)
     int run = 0;    // run number
     bool stereomode = false;    // stereomode on or off
     bool firefly = false;   // flag for firefly or standard camera, in vivo mode only for daVinci camera
-    bool wl_overlay = true; // flag to use fluorescence data overlay on white light images
+    bool pentero = true; // flag to use fluorescence data overlay on white light images
 
     // lifetime boundaries & other display parameters
     bool lt_auto = true; // automatic scale
@@ -110,6 +110,8 @@ void startup(GUIupdater *ui)
     // image acquisition settings
     bool focus = false;     // if true, manual focus is on and camera is streaming
     bool acquire = false;   // if true, enter in acquisition mode
+
+    Mat im = imread("C:/Aiming Beam v2/Release/release/pics/green_light.png", CV_LOAD_IMAGE_COLOR);
 
     // initialise application mode
     int mode = OFFLINE;
@@ -227,6 +229,8 @@ void startup(GUIupdater *ui)
 
             // have the read command within a thread, so the communication is always opened
             boost::thread readingThread(ThreadWrapper::StartRead, conn, &output, &len, &tempdata);
+
+
 
             // strip output \r\n
             output = output.substr(0, len - 2);
@@ -689,12 +693,12 @@ void startup(GUIupdater *ui)
 
             }
 
-            else if (key.compare("!overlay") == 0)
+            else if (key.compare("!pentero") == 0)
             {
-                wl_overlay = (value.compare("1") == 0) ? true : false;
+                pentero = (value.compare("1") == 0) ? true : false;
 
                 // use white light overlay
-                acq->setWLOverlay(wl_overlay);
+                acq->setPentero(pentero);
 
                 // acknowledge
                 conn.write(set_ack(key, value));
@@ -768,16 +772,16 @@ void startup(GUIupdater *ui)
             if (mode != previous_mode)
                 ui->setMode(mode);
 
-            if (mode == STANDBY)
+            if (mode == STANDBY && previous_mode != STANDBY)
             {
                 // display green LED image, if ready to start acquisition
-                Mat im = imread("C:/Aiming Beam v2/Release/release/pics/green_light.png", CV_LOAD_IMAGE_COLOR);
+
                 imshow("Ready", im);
                 //fullscreen. comment to facilitate debugging
                 setWindowProperty("Ready", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
-                im.release();
+                //im.release();
             }
-            else
+            else if (mode != STANDBY)
             {
                 destroyWindow("Ready");
             }
@@ -787,6 +791,8 @@ void startup(GUIupdater *ui)
             //clear up thread
             readingThread.join();
             readingThread.detach();
+
+
 
         }
 
@@ -798,6 +804,7 @@ void startup(GUIupdater *ui)
 
         FrameAcquisition.join();
         FrameAcquisition.detach();
+
 
     } else {
         ui->throwError("Connection not OK");

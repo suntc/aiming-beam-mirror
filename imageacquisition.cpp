@@ -28,12 +28,21 @@ void imageAcquisition::startupCamera(int ch, float thres)
     // startup one or two cameras
     // check if leading camera is connected. Monomode can only be realized if leading camera is plugged in
 
-    // check frame grabber
-    cam = new VideoEpiphan();
+    if (!cam)
+    {
+        // check frame grabber
+        cam = new VideoEpiphan();
+    }
+
     ready_fg = cam->isConnected(0);
 
-    // check USB camera
-    cam_usb = new VideoPointGrey();
+
+    if (!cam_usb)
+    {
+        // check USB camera
+        cam_usb = new VideoPointGrey();
+    }
+
     ready_usb = cam_usb->isConnected(0);
 
     // camera(s) available?
@@ -41,6 +50,7 @@ void imageAcquisition::startupCamera(int ch, float thres)
 
     channel = ch; // channel to be displayed
     threshold = thres; // cross-correlation threshold
+
 }
 
 void imageAcquisition::startAcquisition()
@@ -365,6 +375,7 @@ void imageAcquisition::load_calib()
     {
         if (!calib)
         {
+
             // initialize calibration
             string filename = IOPath::getAppDir();
             if (invivo) // call frame grabber segmentation
@@ -397,11 +408,8 @@ void imageAcquisition::captureFrame()
 
     while (thread)
     {
-
         if (inAcquisition)
         {
-
-
             // capture frame and store it in a temporary variable
             Mat temp;Mat temp2;
             if (invivo)
@@ -608,7 +616,7 @@ void imageAcquisition::captureFrame()
             frame_lab.release();
             frame_lab2.release();
 
-            //Sleep(1); // let it rest for ~10 ms. otherwise it is likely to crash
+            //Sleep(10); // let it rest for ~10 ms. otherwise it is likely to crash
         } else {
 
             // clear timer
@@ -616,6 +624,7 @@ void imageAcquisition::captureFrame()
 
             // clear up blue vector
             std::fill(blues.begin(), blues.end(), 0);
+            std::fill(blues2.begin(), blues2.end(), 0);
 
             counter = 0;
             thres = 0;
@@ -636,10 +645,14 @@ void imageAcquisition::captureFrame()
                 focus_frame.release();
 
             }
+            else
+            {
+                // do nothing
+            }
 
         }
 
-        Sleep(5);
+
 
     }
 }
@@ -666,6 +679,7 @@ void imageAcquisition::adjustArea(int event, int x, int y, int flags, void* user
 // setters
 void imageAcquisition::setInVivo(bool invivo)
 {
+
     this->invivo = invivo;
 
     // load calibration files
@@ -765,7 +779,7 @@ void imageAcquisition::setFirefly(bool firefly)
     this->firefly = firefly;
 }
 
-void imageAcquisition::setWLOverlay(bool overlay)
+void imageAcquisition::setPentero(bool pentero_mode)
 {
-    wl_overlay = overlay;
+    this->pentero_mode = pentero_mode;
 }

@@ -71,7 +71,7 @@ public:
     void setScale(double mn, double mx);
     void setAnsi(int ansi);
     void setFirefly(bool firefly);
-    void setWLOverlay(bool overlay);
+    void setPentero(bool pentero_mode);
 
     void adjustArea(int event, int x, int y);
     static void adjustArea(int event, int x, int y, int flags, void* userdata);
@@ -95,7 +95,6 @@ private:
     bool writing = false;
     bool firefly = false;
     bool pentero_mode = false;
-    bool wl_overlay = true;
     double scale_max = 2;
     double scale_min = 3;
     double radius = 1.0;
