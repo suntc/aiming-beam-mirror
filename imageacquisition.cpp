@@ -669,7 +669,7 @@ void imageAcquisition::adjustArea(int event, int x, int y, int flags, void* user
         else
             acq->seg_stereo->seg->adjustArea(x, y);
 
-        delete(acq);
+        //delete(acq);
 
         //cout << "Left button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
     }
