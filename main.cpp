@@ -775,10 +775,24 @@ void startup(GUIupdater *ui)
             if (mode == STANDBY && previous_mode != STANDBY)
             {
                 // display green LED image, if ready to start acquisition
+                // in Pentero mode show current segmentation, if available
+                Mat cursegIm;
+                if (pentero)
+                {
+                    cursegIm = acq->getCurrentSegmFrame();
+                }
 
-                imshow("Ready", im);
+                if (cursegIm.cols>0)
+                {
+                    imshow("Ready", cursegIm);
+                }
+                else
+                    imshow("Ready", im);
+
                 //fullscreen. comment to facilitate debugging
                 setWindowProperty("Ready", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
+                cursegIm.release();
+
                 //im.release();
             }
             else if (mode != STANDBY)

@@ -12,7 +12,7 @@ using namespace cv;
 StereoSegmentation::StereoSegmentation(StereoCalibration * sc, cv::Mat frame, cv::Point ROI_point1, cv::Point ROI_point2, bool interp, int ch_number, bool interp_succ, bool autoscale, int ansi)
 {
     // StereoSegmentation acts as a wrapper
-    seg = new Segmentation(frame, ROI_point1, ROI_point2, interp, ch_number, interp_succ, sc, autoscale);
+    seg = new Segmentation(frame, ROI_point1, ROI_point2, interp, ch_number, interp_succ, sc, autoscale, false);
 
     // save calibration pointer
     this->calib = sc;

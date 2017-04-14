@@ -68,7 +68,7 @@ void imageAcquisition::startAcquisition()
         {
             if (!seg && !stereomode)
             {
-                seg = new Segmentation(frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false, scale_auto, ansi);
+                seg = new Segmentation(frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false, scale_auto, ansi, pentero_mode);
             }
 
             if (!seg_stereo && stereomode)
@@ -331,7 +331,7 @@ void imageAcquisition::startAcquisition()
                 bg_frame2 = Mat();
 
                 // restart segmentation objects
-                if (!stereomode)// & !pentero_mode)
+                if (!stereomode & !pentero_mode)
                 {
                     delete seg;
                     seg = nullptr;
@@ -782,4 +782,16 @@ void imageAcquisition::setFirefly(bool firefly)
 void imageAcquisition::setPentero(bool pentero_mode)
 {
     this->pentero_mode = pentero_mode;
+}
+
+Mat imageAcquisition::getCurrentSegmFrame()
+{
+    Mat segmFrame;
+
+    if (seg && (seg->overlay))
+    {
+        Mat segmFrame1 = seg->overlay->mergeOverlay(frame);
+        addWeighted( segmFrame1, 0.5, frame, 0.5, 0.0, segmFrame);
+    }
+    return segmFrame;
 }

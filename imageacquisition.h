@@ -72,6 +72,7 @@ public:
     void setAnsi(int ansi);
     void setFirefly(bool firefly);
     void setPentero(bool pentero_mode);
+    cv::Mat imageAcquisition::getCurrentSegmFrame();
 
     void adjustArea(int event, int x, int y);
     static void adjustArea(int event, int x, int y, int flags, void* userdata);

@@ -9,8 +9,8 @@ class Segmentation
 {
 
 public:
-    Segmentation(cv::Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ, bool autoscale, int ansi);
-    Segmentation(cv::Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ, StereoCalibration * calib, bool autoscale);
+    Segmentation(cv::Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ, bool autoscale, int ansi, bool pentero_mode);
+    Segmentation(cv::Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ, StereoCalibration * calib, bool autoscale, bool pentero_mode);
     ~Segmentation();
 
     void startSegmentation(cv::Mat frame, cv::Mat frame_on, cv::Mat frame_off, double lt_ch1, double lt_ch2, double lt_ch3, double lt_ch4, int idx);

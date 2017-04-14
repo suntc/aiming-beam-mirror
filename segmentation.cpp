@@ -16,7 +16,7 @@
 using namespace cv;
 using namespace std;
 
-Segmentation::Segmentation(Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ, StereoCalibration* calib, bool autoscale)
+Segmentation::Segmentation(Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ, StereoCalibration* calib, bool autoscale, bool pentero_mode)
 {
     // Initially setup frame size
     Size s = frame.size();
@@ -26,18 +26,20 @@ Segmentation::Segmentation(Mat frame, cv::Point point1, cv::Point point2, bool i
     this->scale_auto=autoscale;
     stereo_setup = true;
     this->calib = calib;
+    this->pentero_mode = pentero_mode;
 
     // Setup segmentation (shared with 3D measurement constructor)
     init(frame, point1, point2, interp, ch_number, interp_succ);
 }
 
-Segmentation::Segmentation(Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ, bool autoscale, int ansi)
+Segmentation::Segmentation(Mat frame, cv::Point point1, cv::Point point2, bool interp, int ch_number, bool interp_succ, bool autoscale, int ansi, bool pentero_mode)
 {
     // Initially setup frame size
     Size s = frame.size();
     res_x = s.width;
     res_y = s.height;
 
+    this->pentero_mode = pentero_mode;
     this->scale_auto=autoscale;
     double lower_bound_;
     double upper_bound_;
