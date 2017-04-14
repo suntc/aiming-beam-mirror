@@ -433,7 +433,7 @@ float Segmentation::pulsedSegmentation(cv::Mat frame_on, cv::Mat frame_off, Rect
     im_out.release();
 
     // If segmentation is out of the frame area, it is not valid
-    if( x<0 | y<0 | x>corrArea.width | y>corrArea.height | radius>res_y/5 ) // /10
+    if( (x<0) | (y<0) | (x>corrArea.width) | (y>corrArea.height) | (radius>res_y/5) ) // /10
     {
         return 0;
     }

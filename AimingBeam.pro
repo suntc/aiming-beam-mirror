@@ -90,7 +90,8 @@ HEADERS  += mainwindow.h \
     videoinputstereo.h \
     IOTxtData.h \
     videoepiphan.h \
-    frmgrab.h
+    frmgrab.h \
+    abstract_overlay.h
 
 FORMS    += mainwindow.ui
 

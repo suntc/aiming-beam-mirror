@@ -4,11 +4,12 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include "stereocalibration.h"
+#include "abstract_overlay.h"
 
 
 using namespace std;
 
-class Overlay
+class Overlay : public AbstractOverlay
 {
 public:
     Overlay(int res_x, int res_y, double scale_mn, double scale_mx, int ansi);
