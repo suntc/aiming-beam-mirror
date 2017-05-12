@@ -47,6 +47,7 @@ LaguerreDeconvolution::LaguerreDeconvolution(vector<double> iIRF_CH1, vector<dou
     deconProc.preMatChannels(iIRF_CH4, deconMatrices_CH4, DataLength, LaguerreOrder, alpha);
 
     Ccols = deconMatrices_CH1.D.rows;
+
 }
 
 //DeconvolveProcess LaguerreDeconvolution::precomputeMatrices(vector<double> iIRF_CH1, vector<double> iIRF_CH2, vector<double> iIRF_CH3, vector<double> iIRF_CH4)
@@ -85,6 +86,11 @@ double LaguerreDeconvolution::getLifetime(vector<double> fIRF, int channel)
             break;
         case 2:
             lifetime = deconProc.lifetCalc(deconMatrices_CH2, fIRF1, LaguerreOrder, Ccols, resTime);
+            //qDebug() << "1: " << fIRF1.at<double>(0);
+            //qDebug() << "10:" << sum(fIRF1)[0];
+            //qDebug() << "100:" << fIRF1.at<double>(100);
+            //cv::minMaxLoc(your_mat, &min, &max);
+            fIRF2_copy = fIRF1.clone();
             break;
         case 3:
             lifetime = deconProc.lifetCalc(deconMatrices_CH3, fIRF1, LaguerreOrder, Ccols, resTime);
@@ -96,8 +102,14 @@ double LaguerreDeconvolution::getLifetime(vector<double> fIRF, int channel)
 
         fIRF1.release();
     }
-    //qDebug() << "deconv 2";
-    //qDebug() << lifetime;
+
     return lifetime;
+}
+
+double LaguerreDeconvolution::getAcousticIndicator()
+{
+    double min, max;
+    cv::minMaxLoc(fIRF2_copy, &min, &max);
+    return max;
 }
 

@@ -5,6 +5,8 @@
 #include "imageacquisition.h"
 #include <boost/thread.hpp>
 #include <QDebug>
+#include "acousticfeedback.h"
+#include <QtMultimedia/QSound>
 
 void ThreadWrapper::startSegmentationThread(Segmentation *seg, cv::Mat frame, cv::Mat frame_on, cv::Mat frame_off, double lt1, double lt2, double lt3, double lt4, int idx)
 {
@@ -37,4 +39,14 @@ void ThreadWrapper::StartAcquire(imageAcquisition *acq)
 void ThreadWrapper::StartFrameCapture(imageAcquisition *acq)
 {
     acq->captureFrame();
+}
+
+void ThreadWrapper::startFeedback(AcousticFeedback *ac)
+{
+    ac->feedback();
+}
+
+void ThreadWrapper::beep()
+{
+    QSound::play("C:/Aiming Beam v2/Release/release/sounds/beep.wav");
 }

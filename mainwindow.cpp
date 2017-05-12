@@ -5,12 +5,15 @@
 #include <QMessageBox>
 #include <boost/filesystem.hpp>
 #include <QProcess>
+#include <iostream>
+#include <QtMultimedia/QSound>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
 
     // Needed to use string as outputError argument. check QMetaType docs
     qRegisterMetaType<std::string>();

@@ -63,6 +63,7 @@ void StereoSegmentation::startSegmentation(Mat frame_vis, Mat frame_on, Mat fram
         firstFrameSet = true;
     }
 
+
     // start segmentation
     seg->startSegmentation(frame_vis, frame_on, frame_off, lt_ch1, lt_ch2, lt_ch3, lt_ch4, idx);
 
@@ -183,8 +184,8 @@ void StereoSegmentation::startSegmentation(Mat frame_vis, Mat frame_on, Mat fram
         ch2_overlay->drawCircle(beam_pos_vis.x,beam_pos_vis.y,seg->last_radius*0.5,lt_ch2);
         ch3_overlay->drawCircle(beam_pos_vis.x,beam_pos_vis.y,seg->last_radius*0.5,lt_ch3);
         ch4_overlay->drawCircle(beam_pos_vis.x,beam_pos_vis.y,seg->last_radius*0.5,lt_ch4);
-
         // log coordinates (even if the right beam segmentation fails)
+
         log_coords_x.push_back(beam_pos_vis.x);
         log_coords_y.push_back(beam_pos_vis.y);
         log_radius.push_back(seg->last_radius);
@@ -195,7 +196,6 @@ void StereoSegmentation::startSegmentation(Mat frame_vis, Mat frame_on, Mat fram
             Mat cam0pnts(1,1,CV_64FC2, Scalar(beam_pos.x,beam_pos.y) );
             Mat cam1pnts(1,1,CV_64FC2, Scalar(x+xfrom,y+yfrom) );
             Mat res = calib->reconstructPoint3D(cam0pnts,cam1pnts);
-
             // convert from homogenous to Eucledian coordinats
             double height = res.at<Vec4d>(0,0)[2] / res.at<Vec4d>(0,0)[3];
 
@@ -208,7 +208,6 @@ void StereoSegmentation::startSegmentation(Mat frame_vis, Mat frame_on, Mat fram
             }
             if (current_channel==0)
                 overlay->drawCurrentVal(height, current_channel);
-
             height_profile->drawCircle(beam_pos_vis.x,beam_pos_vis.y,seg->last_radius*0.5,height);
 
             // x-, y-coordinates in 3D coordinate system (in inches)

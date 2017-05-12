@@ -272,6 +272,7 @@ double DeconvolveProcess::lifetCalc(deconMats deconMatrices, Mat fIRF1, int Lagu
     double lifet_out = lifet.at<double>(0, 0) * resTime;
     lifet_out = round(lifet_out * 10) / 10;
 
+     //qDebug() << sum(h).val[0];
     lam.release();
     cc.release();
     temp.release();
@@ -279,6 +280,8 @@ double DeconvolveProcess::lifetCalc(deconMats deconMatrices, Mat fIRF1, int Lagu
     lifet.release();
     dtime.release();
     ivec.clear();
+
+
 
     return lifet_out;
 }

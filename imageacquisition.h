@@ -7,6 +7,8 @@
 #include "opencv2/core.hpp"
 #include "segmentation.h"
 #include "stereosegmentation.h"
+#include "acousticfeedback.h"
+#include "laguerredeconvolution.h"
 
 class imageAcquisition
 {
@@ -50,6 +52,7 @@ public:
     Segmentation *seg;
     StereoSegmentation* seg_stereo;
     StereoCalibration *calib;
+    AcousticFeedback *acoustic;
 
     void startupCamera(int ch, float thres);
     void shutdownCamera();
@@ -84,6 +87,8 @@ public:
     std::vector<double> timer_display;
     std::vector<double> timer_frames;
 
+    LaguerreDeconvolution * decon = NULL;
+    void setDecon(LaguerreDeconvolution * deconvolution);
 private:
     double ch1_tau;
     double ch2_tau;

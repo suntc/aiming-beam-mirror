@@ -196,6 +196,7 @@ void startup(GUIupdater *ui)
         bool iIRFs_initialized = false;
         LaguerreDeconvolution *decon = NULL;
 
+
         // measurement # within the acquisition
         int idx = 0;
         //double ch1_tau = 0.0;
@@ -218,7 +219,7 @@ void startup(GUIupdater *ui)
             {
 
                 decon = new LaguerreDeconvolution(iIRF_CH1,iIRF_CH2,iIRF_CH3,iIRF_CH4,time_resolution);
-
+                acq->setDecon(decon);
                 iIRF_CH1.clear();
                 iIRF_CH2.clear();
                 iIRF_CH3.clear();

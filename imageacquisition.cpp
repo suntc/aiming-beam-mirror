@@ -11,6 +11,10 @@
 #include "IOTxtData.h"
 #include "videoepiphan.h"
 #include <ctime>
+#include <iostream>
+#include "acousticfeedback.h"
+
+
 
 #define NO_LIFETIME -1
 
@@ -21,6 +25,8 @@ imageAcquisition::imageAcquisition(bool stereomode)
 {
     this->stereomode = stereomode;
     startupCamera(channel, threshold);
+    acoustic = new AcousticFeedback();
+
 }
 
 void imageAcquisition::startupCamera(int ch, float thres)
@@ -61,6 +67,7 @@ void imageAcquisition::startAcquisition()
     VideoOutput *avi_out_augmented = nullptr;
     VideoOutput *avi_out_raw = nullptr;
 
+
     while (thread)
     {
 
@@ -98,6 +105,8 @@ void imageAcquisition::startAcquisition()
                 avi_out_augmented = new VideoWriter_ab(filename, frame.cols, frame.rows);
 
                 init_output = true;
+
+                acoustic->start_feedback();
             }
 
             // if in acquisition, do segmentation
@@ -145,6 +154,13 @@ void imageAcquisition::startAcquisition()
 
                 // add raw frame to avi export
                 avi_out_raw->addFrame(frame);
+
+                //boost::thread* feedbackThread;
+                //feedbackThread = new boost::thread(boost::bind(ThreadWrapper::startFeedback, acoustic ));
+                //segmentationThread = new boost::thread(boost::bind(ThreadWrapper::startSegmentationThread, seg, frame, frame_on, frame_off, ch1_tau, ch2_tau, ch3_tau, ch4_tau, idx));
+                //ThreadWrapper::startFeedback(acoustic);
+
+
                 boost::thread* segmentationThread;
 
                 // Segmentation frame rate
@@ -221,16 +237,20 @@ void imageAcquisition::startAcquisition()
                 //set_lifetime(NO_LIFETIME,4);
 
                 // thread
+                //feedbackThread->join();
+                //feedbackThread->detach();
+
                 segmentationThread->join();
                 segmentationThread->detach();
                 //segmentationThread->interrupt();
 
                 // update id, to prevent repeated segmentations
                 idx_prev = idx;
-
                 // add segmented frame to avi export
                 avi_out_augmented->addFrame(frame);
+
             }
+
 
             // show frame
             imshow("Acquisition", frame);
@@ -240,7 +260,6 @@ void imageAcquisition::startAcquisition()
 
             // fullscreen
             setWindowProperty("Acquisition", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
-
         }
         else
         {
@@ -249,6 +268,8 @@ void imageAcquisition::startAcquisition()
             {
                 destroyWindow("Acquisition");
                 init_output=false;
+
+                acoustic->stop_feedback();
 
                 // save video streams and delete corresponding pointers
                 avi_out_augmented->closeFile();
@@ -794,4 +815,12 @@ Mat imageAcquisition::getCurrentSegmFrame()
         addWeighted( segmFrame1, 0.5, frame, 0.5, 0.0, segmFrame);
     }
     return segmFrame;
+}
+
+void imageAcquisition::setDecon(LaguerreDeconvolution * deconvolution)
+{
+    // pass deconvolution to acoustic feedback object
+    decon = deconvolution;
+    if (acoustic)
+        acoustic->setDecon(decon);
 }

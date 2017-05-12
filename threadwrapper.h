@@ -7,6 +7,8 @@
 #include "stereosegmentation.h"
 #include "tcp_ip.h"
 #include "imageacquisition.h"
+#include "acousticfeedback.h"
+
 
 class ThreadWrapper
 {
@@ -16,6 +18,8 @@ public:
     static void StartRead(TCP_IP &obj, string *output, int *len, vector<double> *data);
     static void StartAcquire(imageAcquisition *acq);
     static void StartFrameCapture(imageAcquisition *acq);
+    static void startFeedback(AcousticFeedback *ac);
+    static void beep();
 };
 
 #endif // THREADWRAPPER_H

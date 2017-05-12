@@ -11,6 +11,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = AimingBeam
 TEMPLATE = app
 
+RESOURCES     = res.qrc
 
 SOURCES += main.cpp\
         mainwindow.cpp \
@@ -30,7 +31,8 @@ SOURCES += main.cpp\
     stereocalibration.cpp \
     IOTxtData.cpp \
     videoepiphan.cpp \
-    camera_test.cpp
+    camera_test.cpp \
+    acousticfeedback.cpp
 
 
 INCLUDEPATH += "C:\Opt\Boost\include\boost-1_55"
@@ -91,7 +93,8 @@ HEADERS  += mainwindow.h \
     IOTxtData.h \
     videoepiphan.h \
     frmgrab.h \
-    abstract_overlay.h
+    abstract_overlay.h \
+    acousticfeedback.h
 
 FORMS    += mainwindow.ui
 
