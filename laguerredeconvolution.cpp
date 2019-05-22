@@ -19,13 +19,16 @@ LaguerreDeconvolution::LaguerreDeconvolution(vector<double> iIRF_CH1, vector<dou
     // Params
     double alpha = 0.0; // Alpha value initialization
     //int LaguerreOrder = 12; // Laguerre Order initialization
+    // do not initilize here, defined in text file.
     int DataLength = (int) iIRF_CH1.size(); // Length of data
 
     // CH1
     //deconMats deconMatrices_CH1; // All matrices required for the deconvolution
-
+    
+    //no need to define Laguerre order here.
+    //default Laguerre order is defined as element 0 0 of lookup text file
     alpha = deconProc.Laguerre_alphaval(DataLength, LaguerreOrder); // Alpha value and laguerre order from lookup table
-
+    // display error if alpha value is 0, disabled for offline debug version
     if (alpha == 0)
     {
         //QMessageBox messageBox;

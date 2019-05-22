@@ -25,13 +25,13 @@ double DeconvolveProcess::Laguerre_alphaval(int LaguerreLength, int &LG_order)
     string line;
     int rows,cols;
     double my_array[1802][12];
-
+    //open Alpha value loopup table
     //ifstream pFile ("./AlphaLookup/LG_alpha_vals.txt");
     ifstream pFile("C:/Aiming Beam v2/Release/AlphaLookup/LG_alpha_vals.txt");
     if (pFile.is_open())
     {
         rows = 0;
-
+        //read in text file content to my_array
         while(!pFile.eof())
         {
             while(getline(pFile, line))
@@ -46,10 +46,11 @@ double DeconvolveProcess::Laguerre_alphaval(int LaguerreLength, int &LG_order)
             }
         }
         pFile.close();
-
+        // finished reading file, close file ref
         int col_num = 0;
         int row_num = 0;
-
+        
+        // read in default Laguerre order and find the corresponding column
         for (int i = 1; i < 12; i++)
         {
             if (my_array[0][i] == my_array[0][0])
@@ -57,7 +58,7 @@ double DeconvolveProcess::Laguerre_alphaval(int LaguerreLength, int &LG_order)
                 col_num = i;
             }
         }
-
+        // look for row that match data length
         for (int i = 1; i < 1802; i++)
         {
             if (my_array[i][0] == LaguerreLength)
@@ -122,6 +123,7 @@ Mat DeconvolveProcess::Laguerre(int LaguerreOrder, int LaguerreLength, double al
     return L;
 }
 
+// convolve Laguerre base functions with instrument responds function(iIRF in Jing's paper)
 Mat DeconvolveProcess::LaguerreFilt(vector<double> laser, Mat &L)
 {
     // See Jing's paper for this, symbols are the same
@@ -144,6 +146,7 @@ Mat DeconvolveProcess::LaguerreFilt(vector<double> laser, Mat &L)
     return vv;
 }
 
+// derive 3rd direvitive matrix.
 Mat DeconvolveProcess::deriv3rd(int DataLength, Mat &L)
 {
     // See Jing's paper for this, symbols are the same
@@ -173,6 +176,7 @@ Mat DeconvolveProcess::deriv3rd(int DataLength, Mat &L)
     return D_Mat;
 }
 
+//Chol factorization.
 Mat DeconvolveProcess::CholFact(Mat &H)
 {
     // See Jing's paper for information on these, symbols are the same
@@ -203,6 +207,7 @@ Mat DeconvolveProcess::CholFact(Mat &H)
     return H_chol;
 }
 
+// calculate pre decon matrixes with constrains?!
 void DeconvolveProcess::preMatChannels(vector<double> laser, deconMats &deconMatrices_CH1, int DataLength, int LaguerreOrder, double alpha)
 {
     DeconvolveProcess * allfuncs = new DeconvolveProcess;
@@ -281,11 +286,10 @@ double DeconvolveProcess::lifetCalc(deconMats deconMatrices, Mat fIRF1, int Lagu
     dtime.release();
     ivec.clear();
 
-
-
     return lifet_out;
 }
 
+// solve non-negative least square problem.
 Mat DeconvolveProcess::solveNNLS(Mat fIRF1, Mat l1, int LaguerreOrder, int Ccols, double* AA)
 {
     // See Jing's paper for this, symbols are the same
