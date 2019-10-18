@@ -19,7 +19,7 @@ public:
     void start_feedback();
     void stop_feedback();
     bool running = true;
-    double threshold_low_signal = 0.14;
+    double threshold_low_signal = 0.06;
     LaguerreDeconvolution * decon = NULL;
     void setDecon(LaguerreDeconvolution * decon);
 

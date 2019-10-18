@@ -44,8 +44,8 @@ private:
     FrmGrabber* fg1; // leading frame grabber (left camera in stereo)
     FrmGrabber* fg2; // secondary frame grabber (right camera in stereo)
 
-    const char* sn1 = "D2S357061";   // serial number of leading frame grabber
-    const char* sn2 = "D2S302318";   // serial number of secondary frame grabber
+    const char* sn1 = "D2S302318";   // serial number of leading frame grabber D2S302318
+    const char* sn2 = "D2S357061";   // serial number of secondary frame grabber D2S357061
 
     V2U_GrabFrame2* frame1;
     V2U_GrabFrame2* frame2;
