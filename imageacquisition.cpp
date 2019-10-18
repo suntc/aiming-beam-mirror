@@ -258,7 +258,7 @@ void imageAcquisition::startAcquisition()
             imshow("Acquisition", frame);
 
             // fullscreen
-            //setWindowProperty("Acquisition", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);//make window fullscreen
+            setWindowProperty("Acquisition", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);//make window fullscreen
 
             // callback function for mouse event - looking for button click
             setMouseCallback("Acquisition", adjustArea, this);
