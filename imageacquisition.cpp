@@ -16,6 +16,7 @@
 
 
 
+
 #define NO_LIFETIME -1
 
 using namespace cv;
@@ -251,15 +252,17 @@ void imageAcquisition::startAcquisition()
 
             }
 
+            namedWindow("Acquisition",WINDOW_NORMAL); //added to fix full screen issue
 
-            // show frame
+            // show frame, this has to be called before full screen, otherwise the y mouse click will be wrong
             imshow("Acquisition", frame);
+
+            // fullscreen
+            //setWindowProperty("Acquisition", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);//make window fullscreen
 
             // callback function for mouse event - looking for button click
             setMouseCallback("Acquisition", adjustArea, this);
 
-            // fullscreen
-            setWindowProperty("Acquisition", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
         }
         else
         {
@@ -431,6 +434,7 @@ void imageAcquisition::captureFrame()
     {
         if (inAcquisition)
         {
+            std::cout << "start - get images";
             // capture frame and store it in a temporary variable
             Mat temp;Mat temp2;
             if (invivo)
@@ -463,7 +467,7 @@ void imageAcquisition::captureFrame()
                 cvtColor(temp2, frame_lab2, CV_BGR2Lab);
                 extractChannel(frame_lab2, frame_lab2, 2);
             }
-
+            std::cout << "init variables";
             // check if object exists
             if (seg || seg_stereo)
             {
@@ -514,7 +518,7 @@ void imageAcquisition::captureFrame()
 
                 }
 
-
+                std::cout << "before seg";
                 // average intensity in the 2nd channel, within ROI defined by area
                 meanblueint = mean(frame_lab(area));
                 blueint = meanblueint.val[0];
@@ -575,7 +579,7 @@ void imageAcquisition::captureFrame()
                 {
                     beam1_reject = true;
                 }
-
+                std::cout << "after seg";
                 // find aiming beam in second camera
                 if (stereomode)
                 {
@@ -657,9 +661,11 @@ void imageAcquisition::captureFrame()
                     focus_frame = cam->getNextFrame();
                 else
                     focus_frame = cam_usb->getNextFrame();
-                imshow("Focus", focus_frame);
                 // fullscreen
+                namedWindow("Focus",WINDOW_NORMAL);
                 setWindowProperty("Focus", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
+                imshow("Focus", focus_frame);
+
                 if (!inFocus)   destroyWindow("Focus");
 
 
@@ -692,7 +698,7 @@ void imageAcquisition::adjustArea(int event, int x, int y, int flags, void* user
 
         //delete(acq);
 
-        //cout << "Left button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+        //qDebug() << "Left button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
     }
 }
 

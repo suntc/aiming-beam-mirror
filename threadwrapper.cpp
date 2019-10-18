@@ -7,6 +7,7 @@
 #include <QDebug>
 #include "acousticfeedback.h"
 #include <QtMultimedia/QSound>
+//#include <QSound>
 
 void ThreadWrapper::startSegmentationThread(Segmentation *seg, cv::Mat frame, cv::Mat frame_on, cv::Mat frame_off, double lt1, double lt2, double lt3, double lt4, int idx)
 {
