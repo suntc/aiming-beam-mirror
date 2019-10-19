@@ -12,6 +12,7 @@
 #include "videoepiphan.h"
 #include <ctime>
 #include <iostream>
+#include <fstream>
 #include "acousticfeedback.h"
 
 
@@ -67,13 +68,15 @@ void imageAcquisition::startAcquisition()
     clock_t timer_acquisition_start;
     VideoOutput *avi_out_augmented = nullptr;
     VideoOutput *avi_out_raw = nullptr;
+    ofstream outputFile;
 
 
     while (thread)
     {
 
-        if (ctrl)
+        if (inAcquisition)
         {
+            //std::cout << "in acq :)" << std::endl;
             if (!seg && !stereomode)
             {
                 seg = new Segmentation(frame, Point(1,1), Point(frame.cols, frame.rows), false, channel, false, scale_auto, ansi, pentero_mode);
@@ -104,6 +107,11 @@ void imageAcquisition::startAcquisition()
                 infix0.append("_augmented");
                 filename = IOPath::getDataOutputFilename(infix0,"avi","videos",subject);
                 avi_out_augmented = new VideoWriter_ab(filename, frame.cols, frame.rows);
+
+                // by Sun
+                // initialize txt file
+                std::string txtfilename = IOPath::getDataOutputFilename(infix,"txt","txt",subject);
+                outputFile.open (txtfilename);
 
                 init_output = true;
 
@@ -151,7 +159,8 @@ void imageAcquisition::startAcquisition()
 
 
                 // prevent repeated segmentations
-                if (idx == idx_prev && ctrl)    continue;
+                //if (idx == idx_prev && ctrl)    continue;
+                if (idx == idx_prev)    continue;
 
                 // add raw frame to avi export
                 avi_out_raw->addFrame(frame);
@@ -250,6 +259,10 @@ void imageAcquisition::startAcquisition()
                 // add segmented frame to avi export
                 avi_out_augmented->addFrame(frame);
 
+                // By Sun
+                // write a line to txt
+                IOTxtData::writeOneLineTxt(outputFile, seg);
+
             }
 
             namedWindow("Acquisition",WINDOW_NORMAL); //added to fix full screen issue
@@ -266,9 +279,11 @@ void imageAcquisition::startAcquisition()
         }
         else
         {
+            //std::cout << "not in acq" << std::endl;
             // cleanup. This condition is only met when acquisition is stopped by the user
             if (!cleanup)
             {
+                //std::cout << "clean up start" << std::endl;
                 destroyWindow("Acquisition");
                 init_output=false;
 
@@ -280,14 +295,18 @@ void imageAcquisition::startAcquisition()
                 delete(avi_out_augmented);
                 delete(avi_out_raw);
 
+                // commented by Sun
+                 std::string filename;
                 // log files
-                std::string filename = IOPath::getDataOutputFilename(infix,"txt","txt",subject);
+                //std::string filename = IOPath::getDataOutputFilename(infix,"txt","txt",subject);
 
                 // Write data files (lifetimes, segmentation coordinates and height profile)
-                if (!stereomode)
-                    IOTxtData::writeTxtFile(filename, seg);
-                else
-                    IOTxtData::writeTxtFile(filename, seg_stereo);
+                //if (!stereomode)
+                //    IOTxtData::writeTxtFile(filename, seg);
+                //else
+                    //IOTxtData::writeTxtFile(filename, seg_stereo);
+                //close txt file
+                outputFile.close();
 
                 // save figures
                 for (int i=0; i<6; i++)
@@ -367,6 +386,7 @@ void imageAcquisition::startAcquisition()
                 }
 
                 cleanup = true;
+                //std::cout << "clean up done" << std::endl;
             }
         }
     }
@@ -434,7 +454,7 @@ void imageAcquisition::captureFrame()
     {
         if (inAcquisition)
         {
-            std::cout << "start - get images";
+            //std::cout << "start - get images";
             // capture frame and store it in a temporary variable
             Mat temp;Mat temp2;
             if (invivo)
@@ -467,7 +487,7 @@ void imageAcquisition::captureFrame()
                 cvtColor(temp2, frame_lab2, CV_BGR2Lab);
                 extractChannel(frame_lab2, frame_lab2, 2);
             }
-            std::cout << "init variables";
+            //std::cout << "init variables";
             // check if object exists
             if (seg || seg_stereo)
             {
@@ -518,7 +538,7 @@ void imageAcquisition::captureFrame()
 
                 }
 
-                std::cout << "before seg";
+                //std::cout << "before seg";
                 // average intensity in the 2nd channel, within ROI defined by area
                 meanblueint = mean(frame_lab(area));
                 blueint = meanblueint.val[0];
@@ -579,7 +599,7 @@ void imageAcquisition::captureFrame()
                 {
                     beam1_reject = true;
                 }
-                std::cout << "after seg";
+                //std::cout << "after seg";
                 // find aiming beam in second camera
                 if (stereomode)
                 {

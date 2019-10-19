@@ -14,6 +14,13 @@
 
 using namespace std;
 
+void IOTxtData::writeOneLineTxt(ofstream &outputFile, Segmentation *seg)
+{
+    int logSize = seg->log_frame_no.size();
+    outputFile <<std::to_string((int) seg->log_frame_no[logSize-1]) << "\t" << seg->log_lt_ch1[logSize-1] << "\t" << seg->log_lt_ch2[logSize-1] << "\t" << seg->log_lt_ch3[logSize-1] << "\t" << seg->log_lt_ch4[logSize-1] << "\t" << seg->log_coords_x[logSize-1] << "\t" << seg->log_coords_y[logSize-1] << "\t" << seg->log_radius[logSize-1] << "\t" << seg->log_timer[logSize-1] << std::endl;
+    return;
+}
+
 // Read Lifetime data from TXT file
 vector<double> IOTxtData::getLifetimeData(string data_file, int channel)
 {
@@ -33,7 +40,7 @@ vector<double> IOTxtData::getLifetimeData(string data_file, int channel)
             if (word=="1.#INF" || word=="-1.#IND")
             {
                 v.push_back( 0.0 );
-                cout << word << endl;
+                //cout << word << endl;
             }
             else
             {

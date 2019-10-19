@@ -261,7 +261,7 @@ void startup(GUIupdater *ui)
             {
 
                 // disconnecting from peer
-                //qDebug() << "disconnecting";
+                qDebug() << "disconnecting";
 
                 // send acknowledgment
                 conn.write("disconnect:1\r\n");
@@ -274,7 +274,7 @@ void startup(GUIupdater *ui)
 
                 // wait so that master can close connection
                 Sleep(500);
-                //qDebug() << "disconnecting";
+                qDebug() << "disconnecting";
                 break;
             }
 
@@ -758,7 +758,7 @@ void startup(GUIupdater *ui)
                 }
             }
             */
-            acq->ctrl = acquire;
+            //acq->ctrl = acquire;
             acq->inAcquisition = acquire;
             acq->inFocus = focus;
 

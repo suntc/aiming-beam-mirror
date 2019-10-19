@@ -25,6 +25,7 @@ public:
     static void writeLogFile(string filename, vector<double> log);
     static void writeSegmentationLog(string filename, vector<double> time, vector<double> log_pulse_thres, vector<double> log_pulse_min, vector<double> log_pulse_max, vector<double> log_pulse_cur);
     static void writeStereoLog(string filename, vector<double> disparity_y, vector<int> is_sync);
+    static void writeOneLineTxt(ofstream &outputFile, Segmentation *seg);
 };
 
 #endif // IOTxtData_H
